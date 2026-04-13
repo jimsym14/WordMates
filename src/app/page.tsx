@@ -17,6 +17,7 @@ import { UserMenu } from '@/components/user-menu';
 import { useFirebase } from '@/components/firebase-provider';
 import { isGuestProfile } from '@/types/user';
 import { cn } from '@/lib/utils';
+import { useColorStyle } from '@/components/color-style-provider';
 import { useOnlinePlayers } from '@/hooks/use-online-players';
 import { useFriendsModal } from '@/components/friends-modal-provider';
 import { useOverviewStats, type LeaderboardStat } from '@/hooks/use-overview-stats';
@@ -50,8 +51,12 @@ export default function Home() {
   const { resolvedTheme } = useTheme();
   const isLightMode = resolvedTheme === 'light';
   const { openFriendsModal, pendingRequestCount, unreadChatCount, setOnOpenInviteSettings } = useFriendsModal();
+  const { colorStyle } = useColorStyle();
+  const isPalomichi = colorStyle === 'palomichi';
   const heroGlowDark = 'radial-gradient(circle, hsl(var(--primary) / 0.55) 0%, hsl(var(--hero-glow-soft) / 0.9) 45%, hsl(var(--hero-glow-strong) / 0.08) 75%)';
-  const heroGlowLight = 'radial-gradient(circle, rgba(255, 143, 53, 0.8) 0%, rgba(255, 193, 134, 0.78) 40%, rgba(255, 175, 110, 0.35) 65%, rgba(255, 160, 96, 0.12) 80%)';
+  const heroGlowLight = isPalomichi
+    ? 'radial-gradient(circle, rgba(232, 69, 139, 0.75) 0%, rgba(245, 152, 184, 0.7) 40%, rgba(253, 214, 229, 0.35) 65%, rgba(255, 184, 212, 0.12) 80%)'
+    : 'radial-gradient(circle, rgba(255, 143, 53, 0.8) 0%, rgba(255, 193, 134, 0.78) 40%, rgba(255, 175, 110, 0.35) 65%, rgba(255, 160, 96, 0.12) 80%)';
   const heroGlowBackground = isLightMode ? heroGlowLight : heroGlowDark;
 
   // Register callback for opening settings modal with invite friend datar
@@ -86,7 +91,9 @@ export default function Home() {
       description:
         'Dial in your Wordle grind with selectable word sizes, personal speed runs, and leaderboard climbs every time you clutch a solve.',
       vibe: 'Zen focus + gentle pressure',
-      gradient: 'linear-gradient(135deg, #E37924 0%, #FFB347 60%, #FFD9A0 100%)',
+      gradient: isPalomichi
+        ? 'linear-gradient(135deg, #E8458B 0%, #F598B8 60%, #FDD6E5 100%)'
+        : 'linear-gradient(135deg, #E37924 0%, #FFB347 60%, #FFD9A0 100%)',
       icon: User,
       perks: ['Custom word sizes', 'Timed mode', 'Leaderboard ready'],
     },
@@ -96,7 +103,9 @@ export default function Home() {
       description:
         'Jump into co-op boards or PvP bouts with customizable turn timers, match clocks, and word sizes that keep every round wild.',
       vibe: 'Arcade energy + team hype',
-      gradient: 'linear-gradient(140deg, #658F41 0%, #76B66B 55%, #55A05E 100%)',
+      gradient: isPalomichi
+        ? 'linear-gradient(140deg, #B64090 0%, #9A3080 55%, #A03888 100%)'
+        : 'linear-gradient(140deg, #658F41 0%, #76B66B 55%, #55A05E 100%)',
       icon: Users,
       perks: ['Co-op & PvP', 'Custom timers', 'Word size control'],
     },
@@ -105,7 +114,9 @@ export default function Home() {
       subtitle: 'Global Event',
       description: 'One word, one world. Join the daily ritual and compete with everyone.',
       vibe: 'Daily Ritual + Global Stats',
-      gradient: 'linear-gradient(135deg, #FDE047 0%, #FACC15 50%, #EAB308 100%)',
+      gradient: isPalomichi
+        ? 'linear-gradient(135deg, #FFB8D4 0%, #F175A5 50%, #E8458B 100%)'
+        : 'linear-gradient(135deg, #FDE047 0%, #FACC15 50%, #EAB308 100%)',
       icon: Newspaper,
       perks: ['Streaks', 'Global Stats', 'Newspaper'],
     },
@@ -337,7 +348,11 @@ export default function Home() {
         transition={{ duration: 0.35 }}
         className={cn(
           'neu-shell relative z-10 mt-8 w-full max-w-4xl overflow-hidden rounded-[32px] p-5 backdrop-blur-xl sm:mt-10 sm:rounded-[36px] sm:p-10',
-          isLightMode ? 'bg-[#FDE8D7] text-slate-900 transition-[background] duration-700 ease-out' : 'text-white'
+          isLightMode
+            ? isPalomichi
+              ? 'bg-[#FEEAF0] text-slate-900 transition-[background] duration-700 ease-out'
+              : 'bg-[#FDE8D7] text-slate-900 transition-[background] duration-700 ease-out'
+            : 'text-white'
         )}
       >
         <div className="pointer-events-none absolute inset-0 rounded-[36px] border border-white/5" />

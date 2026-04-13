@@ -30,7 +30,7 @@ interface GameGridProps {
 }
 
 const tileTone: Record<GuessScore, string> = {
-    correct: 'border-transparent bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] shadow-[0_18px_45px_rgba(0,0,0,0.25)]',
+    correct: 'border-transparent bg-[hsl(var(--game-correct))] text-[hsl(var(--game-correct-foreground))] shadow-[0_18px_45px_rgba(0,0,0,0.25)]',
     present: 'border-transparent bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-[0_18px_45px_rgba(0,0,0,0.22)]',
     absent: 'bg-muted text-muted-foreground',
 };

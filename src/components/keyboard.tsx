@@ -10,7 +10,7 @@ import type { GuessScore } from '@/lib/wordle';
 const keyboardRows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 
 const keyboardTone: Record<GuessScore, string> = {
-    correct: 'bg-[hsla(var(--accent)/0.95)] text-[hsl(var(--accent-foreground))] border-[hsla(var(--accent)/0.45)] shadow-[0_10px_26px_rgba(0,0,0,0.15)]',
+    correct: 'bg-[hsla(var(--game-correct)/0.95)] text-[hsl(var(--game-correct-foreground))] border-[hsla(var(--game-correct)/0.45)] shadow-[0_10px_26px_rgba(0,0,0,0.15)]',
     present: 'bg-[hsla(var(--primary)/0.9)] text-[hsl(var(--primary-foreground))] border-[hsla(var(--primary)/0.5)] shadow-[0_10px_26px_rgba(0,0,0,0.15)]',
     absent: 'bg-muted text-muted-foreground border-transparent',
 };
@@ -165,7 +165,7 @@ export const Keyboard = memo(function Keyboard({
             <div className="flex flex-wrap items-center justify-center gap-2 sm:flex-nowrap">
                 <Button
                     variant="ghost"
-                    className="shrink-0 gap-2 touch-manipulation rounded-2xl border border-[hsla(var(--accent)/0.5)] bg-[hsla(var(--accent)/0.15)] px-5 py-2 text-[hsl(var(--accent))] shadow-[0_12px_28px_rgba(0,128,96,0.2)] dark:border-[hsla(var(--accent)/0.4)] dark:bg-white/5 dark:text-[hsl(var(--accent-foreground))] sm:px-6"
+                    className="shrink-0 gap-2 touch-manipulation rounded-2xl border border-[hsla(var(--accent)/0.5)] bg-[hsla(var(--accent)/0.15)] px-5 py-2 text-[hsl(var(--accent))] shadow-[0_12px_28px_hsla(var(--accent)/0.2)] dark:border-[hsla(var(--accent)/0.4)] dark:bg-white/5 dark:text-[hsl(var(--accent-foreground))] sm:px-6"
                     onPointerDown={handleReset}
                     disabled={!canInteract}
                 >
@@ -173,7 +173,7 @@ export const Keyboard = memo(function Keyboard({
                 </Button>
                 <button
                     type="button"
-                    className="flex h-10 w-20 touch-manipulation items-center justify-center rounded-2xl border border-transparent bg-[hsl(var(--primary))] text-sm font-semibold uppercase text-[hsl(var(--primary-foreground))] shadow-[0_15px_35px_rgba(255,140,0,0.35)] transition-all hover:-translate-y-0.5 sm:h-12 sm:w-24 dark:bg-[hsl(var(--primary))] dark:text-[hsl(var(--primary-foreground))]"
+                    className="flex h-10 w-20 touch-manipulation items-center justify-center rounded-2xl border border-transparent bg-[hsl(var(--primary))] text-sm font-semibold uppercase text-[hsl(var(--primary-foreground))] shadow-[0_15px_35px_hsla(var(--primary)/0.35)] transition-all hover:-translate-y-0.5 sm:h-12 sm:w-24 dark:bg-[hsl(var(--primary))] dark:text-[hsl(var(--primary-foreground))]"
                     onPointerDown={handleSubmit}
                     disabled={!canInteract || isSubmitting}
                     aria-label="Submit guess"
@@ -182,7 +182,7 @@ export const Keyboard = memo(function Keyboard({
                 </button>
                 <button
                     type="button"
-                    className="flex h-10 w-16 touch-manipulation items-center justify-center rounded-2xl border border-transparent bg-[hsl(var(--destructive))] text-sm font-semibold uppercase text-[hsl(var(--destructive-foreground))] shadow-[0_12px_30px_rgba(255,0,72,0.3)] transition-all hover:-translate-y-0.5 sm:h-12 sm:w-18 sm:text-sm dark:bg-[hsl(var(--destructive))] dark:text-[hsl(var(--destructive-foreground))]"
+                    className="flex h-10 w-16 touch-manipulation items-center justify-center rounded-2xl border border-transparent bg-[hsl(var(--destructive))] text-sm font-semibold uppercase text-[hsl(var(--destructive-foreground))] shadow-[0_12px_30px_hsla(var(--destructive)/0.3)] transition-all hover:-translate-y-0.5 sm:h-12 sm:w-18 sm:text-sm dark:bg-[hsl(var(--destructive))] dark:text-[hsl(var(--destructive-foreground))]"
                     onPointerDown={handleDelete}
                     disabled={!canInteract || isSubmitting}
                     aria-label="Delete letter"

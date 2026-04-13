@@ -17,6 +17,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { GameGrid, type GridRow } from '@/components/game/game-grid';
 import { DailyNewspaperModal } from '@/components/daily/daily-newspaper-modal';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useColorStyle } from '@/components/color-style-provider';
 
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
@@ -27,6 +28,9 @@ export function DailyGame() {
     const { user, profile } = useFirebase();
     const { dailyWord, dailyDate, isSolved, hasPlayedToday, recordWin, recordLoss, savedGuesses, saveProgress } = useDailyStats(profile);
     const { theme } = useTheme();
+    const { colorStyle } = useColorStyle();
+    const isPalomichi = colorStyle === 'palomichi';
+    const isLightMode = theme === 'light';
 
     const [guesses, setGuesses] = useState<GuessResult[]>([]);
     const [currentGuess, setCurrentGuess] = useState('');
@@ -461,7 +465,6 @@ export function DailyGame() {
     }, [guesses]);
 
     const hints = getKeyboardHints(guesses);
-    const isLightMode = theme === 'light';
 
     const gridRows = React.useMemo(() => {
         const rows: GridRow[] = [];
@@ -507,7 +510,12 @@ export function DailyGame() {
     ];
 
     return (
-        <div className="flex min-h-screen flex-col items-center overflow-hidden bg-[#d5c4a1] text-[#2b1409] dark:bg-[#121212] dark:text-[#f4ebd0]">
+        <div className={cn(
+            "flex min-h-screen flex-col items-center overflow-hidden",
+            isPalomichi 
+                ? isLightMode ? "bg-[#FEEAF0] text-[#5E122F]" : "bg-[#2D0B16] text-[#FEEAF0]"
+                : "bg-[#d5c4a1] text-[#2b1409] dark:bg-[#121212] dark:text-[#f4ebd0]"
+        )}>
             <style jsx global>{`
                 @keyframes float {
                     0% { transform: translateY(0px) rotate(var(--tw-rotate)); }
@@ -536,7 +544,12 @@ export function DailyGame() {
                             }}
                         >
                             <span
-                                className="block font-serif font-bold text-black/10 dark:text-white/5 animate-float"
+                                className={cn(
+                                    "block font-serif font-bold animate-float",
+                                    isPalomichi 
+                                        ? isLightMode ? "text-[#5E122F]/10" : "text-[#FEEAF0]/5"
+                                        : "text-black/10 dark:text-white/5"
+                                )}
                                 style={{
                                     fontSize: item.size,
                                     transform: `rotate(${item.rotate})`,
@@ -551,7 +564,12 @@ export function DailyGame() {
             </div>
 
             {/* Header */}
-            <div className="relative z-10 w-full bg-[#E3D4B5] dark:bg-[#1a1a1a] border-b-[3px] border-black dark:border-white/20 p-2 sm:p-4 shadow-sm">
+            <div className={cn(
+                "relative z-10 w-full border-b-[3px] p-2 sm:p-4 shadow-sm",
+                isPalomichi 
+                    ? isLightMode ? "bg-[#FADDE6] border-[#5E122F]" : "bg-[#3E0A1E] border-[#FEEAF0]/20"
+                    : "bg-[#E3D4B5] dark:bg-[#1a1a1a] border-black dark:border-white/20"
+            )}>
                 <div className="mx-auto grid w-full max-w-5xl grid-cols-3 items-center">
                     {/* Left: Back Button */}
                     <div className="flex items-center justify-start">
@@ -562,10 +580,20 @@ export function DailyGame() {
 
                     {/* Center: Title & Vol */}
                     <div className="flex flex-col items-center justify-center text-center">
-                        <h1 className="font-serif text-3xl font-black tracking-tighter text-[#2b1409] dark:text-[#f4ebd0] sm:text-4xl uppercase">
+                        <h1 className={cn(
+                            "font-serif text-3xl font-black tracking-tighter sm:text-4xl uppercase",
+                            isPalomichi 
+                                ? isLightMode ? "text-[#5E122F]" : "text-[#FEEAF0]"
+                                : "text-[#2b1409] dark:text-[#f4ebd0]"
+                        )}>
                             DAILY WORD
                         </h1>
-                        <span className="mt-1 border-t border-[#2b1409]/30 dark:border-[#f4ebd0]/30 pt-1 text-[10px] uppercase tracking-[0.2em] font-serif font-bold opacity-70">
+                        <span className={cn(
+                            "mt-1 border-t pt-1 text-[10px] uppercase tracking-[0.2em] font-serif font-bold opacity-70",
+                            isPalomichi 
+                                ? isLightMode ? "border-[#5E122F]/30" : "border-[#FEEAF0]/30"
+                                : "border-[#2b1409]/30 dark:border-[#f4ebd0]/30"
+                        )}>
                             VOL. {dailyDate.replace(/-/g, '.')}
                         </span>
                     </div>

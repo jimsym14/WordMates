@@ -4,10 +4,12 @@ export type AuthProviderType = 'guest' | 'google' | 'password';
 
 export type UserLanguage = 'EN' | 'EL';
 export type UserThemePreference = 'light' | 'dark' | 'system';
+export type UserColorStyle = 'default' | 'palomichi';
 
 export interface UserPreferences {
   language: UserLanguage;
   theme: UserThemePreference;
+  colorStyle?: UserColorStyle;
 }
 
 export interface UserProfile {
@@ -36,6 +38,7 @@ export interface UserProfile {
 export const DEFAULT_PREFERENCES: UserPreferences = {
   language: 'EN',
   theme: 'system',
+  colorStyle: 'default',
 };
 
 export const isGuestProfile = (profile?: UserProfile | null) => profile?.authProvider === 'guest';

@@ -14,6 +14,8 @@ import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import { toBlob } from 'html-to-image';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useColorStyle } from '@/components/color-style-provider';
+import { DictionaryDefinition } from './dictionary-definition';
 
 export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { manualOpen?: boolean; preventAutoOpen?: boolean; onClose?: () => void }) {
     const { user, profile } = useFirebase();
@@ -37,6 +39,8 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
     const [disableGlow, setDisableGlow] = useState(false);
     const isMobile = useIsMobile();
     const isLight = theme === 'light';
+    const { colorStyle } = useColorStyle();
+    const isPalomichi = colorStyle === 'palomichi';
 
     // Get the user's solve rank from today's history entry
     const solveRank = history?.[dailyDate]?.solveRank ?? null;
@@ -99,12 +103,12 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
         }
 
         const colorHex: Record<string, string> = {
-            orange: '#ea580c',
-            yellow: '#ca8a04',
-            green: '#16a34a',
-            blue: '#0891b2',
-            purple: '#7c3aed',
-            bordeaux: '#9f1239',
+            orange: isPalomichi ? '#E8458B' : '#ea580c',
+            yellow: isPalomichi ? '#F598B8' : '#ca8a04',
+            green: isPalomichi ? '#A03888' : '#16a34a',
+            blue: isPalomichi ? '#7c3aed' : '#0891b2',
+            purple: isPalomichi ? '#4A1525' : '#7c3aed',
+            bordeaux: isPalomichi ? '#2D0B16' : '#9f1239',
         };
 
         // Gradient colors for background
@@ -695,39 +699,45 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                     document.body
                 )}
 
-                <motion.div
-                    ref={newspaperRef}
-                    initial={isMobile ? { scale: 0.5, opacity: 0, y: -50 } : { scale: 0, rotate: -720, opacity: 0 }}
-                    animate={isClosing
-                        ? (isMobile
-                            // Mobile exit: quick flip and fly away
-                            ? { scale: 0.3, opacity: 0, y: 150, rotate: 15, x: 30 }
-                            // Desktop exit: fast spin-shrink and fly up
-                            : { scale: 0, rotate: 180, opacity: 0, y: -120 })
-                        : (isMobile
-                            // Mobile enter: bouncy pop in
-                            ? { scale: 1, opacity: 1, y: 0 }
-                            // Desktop enter: spin in
-                            : { scale: 1, rotate: 0, opacity: 1 })}
-                    transition={isClosing
-                        ? {
-                            duration: isMobile ? 0.25 : 0.35,
-                            ease: [0.4, 0, 1, 1] // Accelerating out - snappy!
-                        }
-                        : (isMobile
-                            ? { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] } // Spring for mobile
-                            : { duration: 1.2, ease: [0.5, 0, 1, 1] })} // Spin for desktop
-                    className={cn(
-                        "relative overflow-hidden border-4 will-change-transform z-[53]",
+                    <motion.div
+                        ref={newspaperRef}
+                        initial={isMobile ? { scale: 0.5, opacity: 0, y: -50 } : { scale: 0, rotate: -720, opacity: 0 }}
+                        animate={isClosing
+                            ? (isMobile
+                                // Mobile exit: quick flip and fly away
+                                ? { scale: 0.3, opacity: 0, y: 150, rotate: 15, x: 30 }
+                                // Desktop exit: fast spin-shrink and fly up
+                                : { scale: 0, rotate: 180, opacity: 0, y: -120 })
+                            : (isMobile
+                                // Mobile enter: bouncy pop in
+                                ? { scale: 1, opacity: 1, y: 0 }
+                                // Desktop enter: spin in
+                                : { scale: 1, rotate: 0, opacity: 1 })}
+                        transition={isClosing
+                            ? {
+                                duration: isMobile ? 0.25 : 0.35,
+                                ease: [0.4, 0, 1, 1] // Accelerating out - snappy!
+                            }
+                            : (isMobile
+                                ? { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] } // Spring for mobile
+                                : { duration: 1.2, ease: [0.5, 0, 1, 1] })} // Spin for desktop
+                        className="relative z-[53] flex w-full max-w-md flex-col gap-3 sm:gap-4 will-change-transform"
+                    >
+                    <div className={cn(
+                        "relative overflow-hidden border-4 shadow-2xl",
                         // Less intense shadow on mobile for performance
                         isMobile ? "shadow-lg" : "shadow-2xl",
-                        isLight ? "bg-[#f4ebd0] border-[#2b1409] text-[#2b1409]" : "bg-[#e0d6b9] border-black text-black"
-                    )}
-                >
-                    {/* Newspaper Header */}
-                    <div className="border-b-4 border-black p-2 sm:p-3 text-center relative z-10">
-                        <div className="flex items-center justify-center border-b-2 border-black pb-1.5">
-                            <span className="border-2 border-black bg-black px-2 py-0.5 sm:px-3 font-serif text-xs sm:text-sm font-bold uppercase tracking-widest text-[#f4ebd0] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
+                        isPalomichi 
+                            ? isLight ? "bg-[#FEEAF0] border-[#7F1D3C] text-[#7F1D3C]" : "bg-[#F598B8] border-[#3E0A1E] text-[#3E0A1E]"
+                            : isLight ? "bg-[#f4ebd0] border-[#2b1409] text-[#2b1409]" : "bg-[#e0d6b9] border-black text-black"
+                    )}>
+                    <div className={cn("border-b-4 p-2 sm:p-3 text-center relative z-10", isPalomichi && !isLight ? "border-[#3E0A1E]" : "border-black")}>
+                        <div className={cn("flex items-center justify-center border-b-2 pb-1.5", isPalomichi && !isLight ? "border-[#3E0A1E]" : "border-black")}>
+                            <span className={cn("border-2 px-2 py-0.5 sm:px-3 font-serif text-xs sm:text-sm font-bold uppercase tracking-widest shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]", 
+                              isPalomichi 
+                                ? isLight ? "border-[#7F1D3C] bg-[#7F1D3C] text-[#FEEAF0]" : "border-[#3E0A1E] bg-[#3E0A1E] text-[#F598B8]"
+                                : "border-black bg-black text-[#f4ebd0]"
+                            )}>
                                 {dailyDate}
                             </span>
                         </div>
@@ -754,7 +764,9 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                                                 key={idx}
                                                 className={cn(
                                                     "w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-sm sm:text-base font-black border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
-                                                    displayIsSolved ? "bg-[#6aaa64] text-white" : "bg-[#787c7e] text-white"
+                                                    displayIsSolved 
+                                                      ? isPalomichi ? "bg-[#E8458B] text-white" : "bg-[#6aaa64] text-white" 
+                                                      : isPalomichi && !isLight ? "bg-[#543b44] text-[rgba(255,255,255,0.8)]" : "bg-[#787c7e] text-white"
                                                 )}
                                             >
                                                 {letter}
@@ -771,7 +783,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                                 </p>
 
                                 {/* Newspaper-style Stats Section */}
-                                <div className="grid w-full grid-cols-2 border-t border-b border-dashed border-black/50 py-2 sm:py-3 mt-2">
+                                <div className="grid w-full grid-cols-2 border-t border-b border-dashed border-black/50 py-2 sm:py-3 mt-4">
                                     {/* Streak Column */}
                                     <div className="flex flex-col items-center justify-center border-r border-dashed border-black/50 px-2">
                                         <span className="text-[8px] sm:text-[9px] font-serif uppercase tracking-[0.15em] opacity-70">Current Streak</span>
@@ -909,6 +921,14 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                     >
                         <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[3]" />
                     </motion.button>
+                    </div>
+
+                    {/* Dictionary Definition Card below Modal */}
+                    {displayHasPlayed && (
+                        <div className="w-full">
+                            <DictionaryDefinition word={dailyWord} isWinState={displayIsSolved} />
+                        </div>
+                    )}
                 </motion.div>
 
                 {/* Debug buttons - localhost only */}

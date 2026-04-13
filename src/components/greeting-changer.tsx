@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
+import { useColorStyle } from '@/components/color-style-provider';
 
 const greetings = [
   'Here we go again!',
@@ -58,6 +59,14 @@ export default function GreetingChanger() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentGreeting, setCurrentGreeting] = useState(greetings[0]);
   const { resolvedTheme } = useTheme();
+  const { colorStyle } = useColorStyle();
+
+  const glowColor = useMemo(() => {
+    if (colorStyle === 'palomichi') return { r: 232, g: 69, b: 139 };
+    return { r: 255, g: 122, b: 24 };
+  }, [colorStyle]);
+
+  const textColor = colorStyle === 'palomichi' ? '#E8458B' : '#F7931E';
 
   const changeGreeting = useCallback(() => {
     setCurrentIndex((prevIndex) => {
@@ -80,7 +89,8 @@ export default function GreetingChanger() {
       <AnimatePresence mode="wait">
         <motion.h2
           key={currentIndex}
-          className="font-comic text-xl md:text-2xl font-semibold tracking-wider whitespace-nowrap text-[#F7931E]"
+          className="font-comic text-xl md:text-2xl font-semibold tracking-wider whitespace-nowrap"
+          style={{ color: textColor }}
           variants={sentenceVariants}
           initial="hidden"
           animate="visible"
@@ -107,10 +117,10 @@ export default function GreetingChanger() {
             (_, index) => `
           @keyframes glow-${index} {
             0% {
-              text-shadow: 0 0 0px rgba(255, 122, 24, 0);
+              text-shadow: 0 0 0px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0);
             }
             100% {
-              text-shadow: 0 0 12px rgba(255, 122, 24, 0.6), 0 0 24px rgba(255, 122, 24, 0.4), 0 0 36px rgba(255, 122, 24, 0.2);
+              text-shadow: 0 0 12px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0.6), 0 0 24px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0.4), 0 0 36px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0.2);
             }
           }
         `

@@ -43,6 +43,9 @@
     --accent: 104 32% 42%;
     --accent-foreground: 210 40% 98%;
 
+    --game-correct: var(--accent);
+    --game-correct-foreground: var(--accent-foreground);
+
     --destructive: 2 78% 56%;
     --destructive-foreground: 210 40% 98%;
 
@@ -97,6 +100,9 @@
     --accent: 110 32% 48%;
     --accent-foreground: 210 40% 98%;
 
+    --game-correct: var(--accent);
+    --game-correct-foreground: var(--accent-foreground);
+
     --destructive: 0 63% 41%;
     --destructive-foreground: 210 40% 98%;
 
@@ -124,6 +130,117 @@
     --chart-5: 27 87% 67%;
   }
 }
+/* ── Palomichi (Pink) — Light ── */
+html.color-palomichi {
+  --background: 340 30% 97%;
+  --foreground: 340 20% 14%;
+
+  --card: 340 40% 98%;
+  --card-foreground: 340 20% 14%;
+  --panel-warm: 335 38% 95%;
+  --panel-neutral: 340 30% 98%;
+  --panel-sage: 330 28% 94%;
+  --panel-border: 338 24% 76%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 340 20% 14%;
+
+  --primary: 338 78% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 335 22% 91%;
+  --secondary-foreground: 338 30% 18%;
+
+  --muted: 335 22% 91%;
+  --muted-foreground: 340 14% 38%;
+
+  --accent: 320 52% 48%;
+  --accent-foreground: 0 0% 100%;
+
+  --game-correct: 104 32% 42%;
+  --game-correct-foreground: 210 40% 98%;
+
+  --destructive: 2 78% 56%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 335 22% 78%;
+  --input: 335 22% 78%;
+  --ring: 338 78% 58%;
+
+  --neu-shadow-light: 340 30% 88%;
+  --neu-shadow-dark: 0 0% 100%;
+  --neu-background: 340 30% 96%;
+
+  --floating-letter: 338 60% 88%;
+  --hero-border: 335 22% 74%;
+  --hero-glow-soft: 338 72% 92%;
+  --hero-glow-strong: 320 38% 88%;
+  --hero-glow-ambient: 338 60% 78%;
+  --button-contrast-light: 340 52% 97%;
+  --button-contrast-dark: 340 24% 16%;
+
+  --chart-1: 338 68% 58%;
+  --chart-2: 320 52% 48%;
+  --chart-3: 350 32% 28%;
+  --chart-4: 355 68% 66%;
+  --chart-5: 340 78% 62%;
+}
+
+/* ── Palomichi (Pink) — Dark ── */
+html.dark.color-palomichi {
+  --background: 330 18% 7%;
+  --foreground: 340 18% 90%;
+
+  --card: 330 20% 11%;
+  --card-foreground: 340 18% 90%;
+  --panel-warm: 335 24% 14%;
+  --panel-neutral: 330 22% 10%;
+  --panel-sage: 325 16% 16%;
+  --panel-border: 330 16% 22%;
+
+  --popover: 330 20% 11%;
+  --popover-foreground: 340 18% 90%;
+
+  --primary: 338 72% 62%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 330 16% 17%;
+  --secondary-foreground: 340 24% 94%;
+
+  --muted: 330 16% 17%;
+  --muted-foreground: 335 10% 68%;
+
+  --accent: 320 44% 54%;
+  --accent-foreground: 0 0% 100%;
+
+  --game-correct: 110 32% 48%;
+  --game-correct-foreground: 210 40% 98%;
+
+  --destructive: 0 63% 41%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 330 16% 22%;
+  --input: 330 16% 22%;
+  --ring: 338 72% 62%;
+
+  --neu-shadow-light: 330 18% 4%;
+  --neu-shadow-dark: 330 18% 16%;
+  --neu-background: 330 18% 10%;
+
+  --floating-letter: 340 30% 28%;
+  --hero-border: 330 14% 24%;
+  --hero-glow-soft: 338 52% 18%;
+  --hero-glow-strong: 330 30% 8%;
+  --hero-glow-ambient: 338 62% 36%;
+  --button-contrast-light: 340 42% 94%;
+  --button-contrast-dark: 330 22% 14%;
+
+  --chart-1: 338 52% 56%;
+  --chart-2: 320 44% 48%;
+  --chart-3: 350 28% 26%;
+  --chart-4: 355 58% 62%;
+  --chart-5: 340 68% 58%;
+}
 
 @layer base {
   * {
@@ -135,7 +252,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-500 ease-in-out;
   }
 
   /* Re-enable text selection for inputs */
@@ -216,6 +333,7 @@
     background: hsl(var(--panel-neutral));
     border: 1px solid hsla(28, 32%, 65%, 0.25);
     box-shadow: -18px -18px 38px rgba(255, 255, 255, 0.55), 26px 26px 54px rgba(203, 142, 97, 0.3);
+    transition: all 0.5s ease-in-out;
   }
 
   .dark .neu-shell {
@@ -228,6 +346,7 @@
     background: hsl(var(--panel-neutral));
     border: 1px solid hsla(28, 32%, 65%, 0.35);
     box-shadow: -12px -12px 28px rgba(255, 255, 255, 0.7), 18px 18px 35px rgba(215, 146, 101, 0.35);
+    transition: all 0.5s ease-in-out;
   }
 
   .dark .neu-card {
@@ -389,6 +508,522 @@
   .mode-card:focus-within .play-pill::after {
     opacity: 1;
   }
+
+  /* ══════════════════════════════════════════════
+     Palomichi — Global component overrides
+     Override every hardcoded orange/amber/emerald
+     color so the theme is consistent everywhere.
+     ══════════════════════════════════════════════ */
+
+  /* ── Neumorphic shells & cards ── */
+  .color-palomichi .neu-shell {
+    border-color: hsla(338, 28%, 65%, 0.25);
+    box-shadow: -18px -18px 38px rgba(255, 255, 255, 0.55), 26px 26px 54px rgba(200, 120, 160, 0.3);
+  }
+
+  .dark.color-palomichi .neu-shell {
+    border-color: hsla(338, 28%, 35%, 0.25);
+    box-shadow: -18px -18px 38px rgba(20, 10, 15, 0.55), 26px 26px 54px rgba(200, 120, 160, 0.05);
+  }
+
+  .color-palomichi .neu-card {
+    border-color: hsla(338, 28%, 65%, 0.25);
+    box-shadow: -8px -8px 20px rgba(255, 255, 255, 0.6), 12px 12px 28px rgba(200, 120, 160, 0.25);
+  }
+
+  .dark.color-palomichi .neu-card {
+    border-color: hsla(338, 28%, 35%, 0.25);
+    box-shadow: -8px -8px 20px rgba(20, 10, 15, 0.55), 12px 12px 28px rgba(200, 120, 160, 0.05);
+    background: linear-gradient(135deg, hsla(340, 20%, 16%, 0.9) 0%, hsla(340, 24%, 10%, 0.95) 100%);
+  }
+
+  .color-palomichi .sunset-card {
+    border-color: hsla(338, 28%, 65%, 0.35);
+    box-shadow: -12px -12px 28px rgba(255, 255, 255, 0.7), 18px 18px 35px rgba(200, 120, 160, 0.35);
+  }
+
+  /* ── Sunset / gradient cards ── */
+  .color-palomichi .sunset-card {
+    background: linear-gradient(140deg, rgba(255, 245, 248, 0.98) 0%, rgba(255, 210, 225, 0.98) 55%, rgba(255, 180, 200, 0.98) 100%) !important;
+    box-shadow: 0 22px 50px rgba(220, 80, 140, 0.15);
+  }
+
+  .dark.color-palomichi .sunset-card {
+    background: hsl(var(--card)) !important;
+  }
+
+  .color-palomichi .sunset-shell {
+    background: linear-gradient(140deg, #fff5f8 0%, #ffd4e0 48%, #ffc0d0 100%) !important;
+    box-shadow: 0 45px 120px rgba(220, 80, 140, 0.23);
+  }
+
+  .dark.color-palomichi .sunset-shell {
+    background: hsl(var(--card)) !important;
+    box-shadow: 0 40px 140px rgba(0, 0, 0, 0.25);
+  }
+
+  /* ── Pale orange (hero) shell → pale pink ── */
+  .color-palomichi .pale-orange-shell {
+    border-color: rgba(255, 160, 190, 0.6) !important;
+    background: linear-gradient(118deg, #fff0f4 0%, #ffd6e4 35%, rgba(255, 190, 210, 0.98) 70%, rgba(255, 150, 180, 0.98) 100%) !important;
+    color: #2b0616 !important;
+  }
+
+  .dark.color-palomichi .pale-orange-shell {
+    background: hsl(var(--card)) !important;
+    border-color: hsla(338, 30%, 30%, 0.5) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .color-palomichi .hero-shell-light {
+    border-color: rgba(255, 160, 190, 0.85) !important;
+    background: linear-gradient(122deg, rgba(255, 240, 245, 0.95) 0%, rgba(255, 200, 220, 0.98) 32%, rgba(255, 160, 190, 0.98) 70%, rgba(230, 80, 130, 0.95) 100%) !important;
+    box-shadow:
+      0 60px 140px rgba(220, 80, 140, 0.32),
+      0 28px 70px rgba(240, 150, 180, 0.45),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.35) !important;
+    color: #280b18 !important;
+  }
+
+  .color-palomichi .outline-bright {
+    border-color: hsla(338, 52%, 62%, 0.8) !important;
+  }
+
+  /* ── Neumorphic button overrides ── */
+  .color-palomichi .btn-multiplayer-active,
+  .color-palomichi.dark .btn-multiplayer-active {
+    box-shadow: 0 0 20px 5px hsla(var(--primary), 0.5) !important;
+  }
+
+  .color-palomichi .btn-multiplayer-inactive {
+    box-shadow: 5px 5px 10px hsla(340, 30%, 88%, 1), -5px -5px 10px white !important;
+  }
+
+  .dark.color-palomichi .btn-multiplayer-inactive {
+    box-shadow: 7px 7px 14px hsla(var(--primary), 0.2), -7px -7px 14px hsla(var(--primary), 0.05) !important;
+  }
+
+  /* ── Homepage: solo card gradient → pink ── */
+  .color-palomichi [style*="linear-gradient(135deg, #E37924"] {
+    background: linear-gradient(135deg, #E8458B 0%, #F598B8 60%, #FDD6E5 100%) !important;
+  }
+
+  /* ── Homepage: greeting text color ── */
+  .color-palomichi .text-\[\#F7931E\] {
+    color: #E8458B !important;
+  }
+
+  /* ── Homepage: stat card light backgrounds ── */
+  .color-palomichi .bg-\[\#FFFBF7\] {
+    background-color: #FFF5F8 !important;
+  }
+
+  /* ── Orange-based gradient overrides (buttons, pills) ── */
+  .color-palomichi .from-\[\#ff8f3f\] {
+    --tw-gradient-from: #E8458B !important;
+  }
+
+  .color-palomichi .to-\[\#ffb347\] {
+    --tw-gradient-to: #F598B8 !important;
+  }
+
+  .color-palomichi .from-\[\#ffb27a\] {
+    --tw-gradient-from: #F175A5 !important;
+  }
+
+  .color-palomichi .to-\[\#ffdda7\] {
+    --tw-gradient-to: #FDD6E5 !important;
+  }
+
+  .color-palomichi .from-\[\#ff7a18\] {
+    --tw-gradient-from: #D63B7A !important;
+  }
+
+  .color-palomichi .from-\[\#f97316\] {
+    --tw-gradient-from: #E8458B !important;
+  }
+
+  .color-palomichi .to-\[\#fabb5a\] {
+    --tw-gradient-to: #F598B8 !important;
+  }
+
+  .color-palomichi .from-\[\#ffe8b5\] {
+    --tw-gradient-from: #FFE0EC !important;
+  }
+
+  .color-palomichi .to-\[\#ffd48a\] {
+    --tw-gradient-to: #FFC4D9 !important;
+  }
+
+  .color-palomichi .text-\[\#5f2b00\] {
+    color: #5f0033 !important;
+  }
+
+  .color-palomichi .text-\[\#7a4b00\] {
+    color: #7a0042 !important;
+  }
+
+  /* ── Amber Tailwind utility overrides ── */
+  .color-palomichi .text-amber-400 {
+    color: #F175A5 !important;
+  }
+
+  .color-palomichi .text-amber-500 {
+    color: #E8458B !important;
+  }
+
+  .color-palomichi .text-amber-600 {
+    color: #D63B7A !important;
+  }
+
+  .color-palomichi .text-amber-700 {
+    color: #B8306A !important;
+  }
+
+  .color-palomichi .text-amber-100 {
+    color: #FFF0F5 !important;
+  }
+
+  .color-palomichi .bg-amber-50 {
+    background-color: #FFF5F8 !important;
+  }
+
+  .color-palomichi .bg-amber-100 {
+    background-color: #FFE0EC !important;
+  }
+
+  .color-palomichi .border-amber-200 {
+    border-color: #FFB8D4 !important;
+  }
+
+  .color-palomichi .border-amber-400\/40 {
+    border-color: rgba(241, 117, 165, 0.4) !important;
+  }
+
+  .color-palomichi .border-amber-300\/20 {
+    border-color: rgba(255, 184, 212, 0.2) !important;
+  }
+
+  .color-palomichi .border-amber-500\/30 {
+    border-color: rgba(232, 69, 139, 0.3) !important;
+  }
+
+  .color-palomichi .border-amber-500\/50 {
+    border-color: rgba(232, 69, 139, 0.5) !important;
+  }
+
+  .color-palomichi .bg-amber-500\/10 {
+    background-color: rgba(232, 69, 139, 0.1) !important;
+  }
+
+  .color-palomichi .bg-amber-500\/15 {
+    background-color: rgba(232, 69, 139, 0.15) !important;
+  }
+
+  .color-palomichi .bg-amber-500\/20 {
+    background-color: rgba(232, 69, 139, 0.2) !important;
+  }
+
+  .color-palomichi .text-amber-100\/80 {
+    color: rgba(255, 240, 245, 0.8) !important;
+  }
+
+  /* ── Orange Tailwind utility overrides ── */
+  .color-palomichi .text-orange-200 {
+    color: #FFB8D4 !important;
+  }
+
+  .color-palomichi .text-orange-400 {
+    color: #F175A5 !important;
+  }
+
+  .color-palomichi .text-orange-700 {
+    color: #B8306A !important;
+  }
+
+  .color-palomichi .from-orange-600 {
+    --tw-gradient-from: #D63B7A !important;
+  }
+
+  .color-palomichi .to-orange-700 {
+    --tw-gradient-to: #B8306A !important;
+  }
+
+  .color-palomichi .from-orange-100 {
+    --tw-gradient-from: #FFE0EC !important;
+  }
+
+  .color-palomichi .to-orange-950\/30 {
+    --tw-gradient-to: rgba(80, 10, 40, 0.3) !important;
+  }
+
+  /* ── Amber gradient overrides ── */
+  .color-palomichi .from-amber-500 {
+    --tw-gradient-from: #E8458B !important;
+  }
+
+  .color-palomichi .to-amber-200 {
+    --tw-gradient-to: #FFB8D4 !important;
+  }
+
+  .color-palomichi .from-amber-50 {
+    --tw-gradient-from: #FFF5F8 !important;
+  }
+
+  .color-palomichi .via-amber-200 {
+    --tw-gradient-via: #FFB8D4 !important;
+  }
+
+  .color-palomichi .via-amber-50 {
+    --tw-gradient-via: #FFF5F8 !important;
+  }
+
+  /* ── Yellow/gold → rose-pink ── */
+  .color-palomichi .border-yellow-400 {
+    border-color: #F175A5 !important;
+  }
+
+  .color-palomichi .border-yellow-400\/50 {
+    border-color: rgba(241, 117, 165, 0.5) !important;
+  }
+
+  .color-palomichi .from-yellow-300 {
+    --tw-gradient-from: #F598B8 !important;
+  }
+
+  .color-palomichi .via-amber-200 {
+    --tw-gradient-via: #FFB8D4 !important;
+  }
+
+  .color-palomichi .to-yellow-400 {
+    --tw-gradient-to: #F175A5 !important;
+  }
+
+  .color-palomichi .from-yellow-100 {
+    --tw-gradient-from: #FFE0EC !important;
+  }
+
+  .color-palomichi .to-yellow-900 {
+    --tw-gradient-to: #4A0028 !important;
+  }
+
+  .color-palomichi .text-yellow-900 {
+    color: #4A0028 !important;
+  }
+
+  .color-palomichi .text-yellow-100 {
+    color: #FFF0F5 !important;
+  }
+
+  .color-palomichi .from-yellow-950\/40 {
+    --tw-gradient-from: rgba(40, 5, 22, 0.4) !important;
+  }
+
+  .color-palomichi .via-yellow-900\/20 {
+    --tw-gradient-via: rgba(74, 0, 40, 0.2) !important;
+  }
+
+  /* ── Emerald → deep rose/magenta ── */
+  .color-palomichi .text-emerald-400 {
+    color: #F175A5 !important;
+  }
+
+  .color-palomichi .text-emerald-700 {
+    color: #B8306A !important;
+  }
+
+  .color-palomichi .text-emerald-200 {
+    color: #FFB8D4 !important;
+  }
+
+  .color-palomichi .bg-emerald-50 {
+    background-color: #FFF5F8 !important;
+  }
+
+  .color-palomichi .bg-emerald-100 {
+    background-color: #FFE0EC !important;
+  }
+
+  .color-palomichi .bg-emerald-300\/40 {
+    background-color: rgba(255, 184, 212, 0.4) !important;
+  }
+
+  .color-palomichi .bg-emerald-500\/10 {
+    background-color: rgba(182, 64, 144, 0.1) !important;
+  }
+
+  .color-palomichi .bg-emerald-500\/15 {
+    background-color: rgba(182, 64, 144, 0.15) !important;
+  }
+
+  .color-palomichi .bg-emerald-500\/20 {
+    background-color: rgba(182, 64, 144, 0.2) !important;
+  }
+
+  .color-palomichi .border-emerald-200 {
+    border-color: #FFB8D4 !important;
+  }
+
+  .color-palomichi .border-emerald-500\/40 {
+    border-color: rgba(182, 64, 144, 0.4) !important;
+  }
+
+  .color-palomichi .from-emerald-500 {
+    --tw-gradient-from: #B64090 !important;
+  }
+
+  .color-palomichi .to-emerald-600 {
+    --tw-gradient-to: #9A3080 !important;
+  }
+
+  .color-palomichi .from-emerald-600 {
+    --tw-gradient-from: #9A3080 !important;
+  }
+
+  .color-palomichi .to-emerald-700 {
+    --tw-gradient-to: #7C2468 !important;
+  }
+
+  .color-palomichi .from-teal-600 {
+    --tw-gradient-from: #A03888 !important;
+  }
+
+  .color-palomichi .to-teal-600 {
+    --tw-gradient-to: #A03888 !important;
+  }
+
+  .color-palomichi .to-teal-700 {
+    --tw-gradient-to: #872E72 !important;
+  }
+
+  /* ── Shadow overrides ── */
+  .color-palomichi .shadow-orange-500\/20 {
+    --tw-shadow-color: rgba(232, 69, 139, 0.2) !important;
+  }
+
+  .color-palomichi .shadow-emerald-500\/20 {
+    --tw-shadow-color: rgba(182, 64, 144, 0.2) !important;
+  }
+
+  /* ── Settings segmented control active colors ── */
+  .color-palomichi .text-orange-700 {
+    color: #B8306A !important;
+  }
+
+  .color-palomichi .dark\:text-orange-400:is(.dark *) {
+    color: #F175A5 !important;
+  }
+
+  .color-palomichi .dark\:text-emerald-400:is(.dark *) {
+    color: #F175A5 !important;
+  }
+
+  .color-palomichi .text-emerald-700 {
+    color: #B8306A !important;
+  }
+
+  /* ── Settings modal solo gradient → pink ── */
+  .color-palomichi .from-amber-500 {
+    --tw-gradient-from: #E8458B !important;
+  }
+
+  .color-palomichi .to-orange-600 {
+    --tw-gradient-to: #D63B7A !important;
+  }
+
+  .color-palomichi .from-amber-600 {
+    --tw-gradient-from: #D63B7A !important;
+  }
+
+  /* ── Focus rings ── */
+  .color-palomichi .focus-visible\:ring-emerald-500:focus-visible {
+    --tw-ring-color: #B64090 !important;
+  }
+
+  /* ── Greeting text glow ─ override inline styles for the animated greeting ── */
+  .color-palomichi [class*="font-comic"][class*="text-[#F7931E]"] {
+    color: #E8458B !important;
+  }
+
+  /* ── Game page: copy button and ID pill ── */
+  .color-palomichi .text-\[\#2b1409\] {
+    color: #2b0616 !important;
+  }
+
+  .color-palomichi .text-\[\#2b1606\] {
+    color: #2b0616 !important;
+  }
+
+  /* ── Dark mode variants for .color-palomichi ── */
+  .dark.color-palomichi .border-amber-500\/30 {
+    border-color: rgba(241, 117, 165, 0.3) !important;
+  }
+
+  .dark.color-palomichi .bg-amber-500\/10 {
+    background-color: rgba(232, 69, 139, 0.1) !important;
+  }
+
+  .dark.color-palomichi .text-amber-100 {
+    color: #FFF0F5 !important;
+  }
+
+  .dark.color-palomichi .bg-amber-500\/5 {
+    background-color: rgba(232, 69, 139, 0.05) !important;
+  }
+
+  .dark.color-palomichi .text-amber-200 {
+    color: #FFB8D4 !important;
+  }
+
+  .dark.color-palomichi .text-amber-400 {
+    color: #F175A5 !important;
+  }
+
+  .dark.color-palomichi .border-emerald-500\/40 {
+    border-color: rgba(182, 64, 144, 0.4) !important;
+  }
+
+  .dark.color-palomichi .bg-emerald-500\/10 {
+    background-color: rgba(182, 64, 144, 0.1) !important;
+  }
+
+  .dark.color-palomichi .bg-emerald-500\/15 {
+    background-color: rgba(182, 64, 144, 0.15) !important;
+  }
+
+  .dark.color-palomichi .text-emerald-200 {
+    color: #FFB8D4 !important;
+  }
+
+  .dark.color-palomichi .bg-emerald-500\/20 {
+    background-color: rgba(182, 64, 144, 0.2) !important;
+  }
+
+  /* ── Palomichi: Game evaluation tile color overrides ──
+     Keep correct tiles GREEN and present tiles PINK in the game grid and keyboard.
+     This avoids changing --accent globally which would break all the themed pink UI. */
+
+  /* Newspaper grid: present tiles → pink instead of orange */
+  .color-palomichi .bg-orange-500 {
+    background-color: #E8458B !important;
+  }
+  .color-palomichi .border-orange-600 {
+    border-color: #D63B7A !important;
+  }
+
+  /* Ghost preview (above keyboard): present → pink, correct → green */
+  .color-palomichi .border-amber-500\/50 {
+    border-color: rgba(232, 69, 139, 0.5) !important;
+  }
+  .color-palomichi .bg-amber-500\/20 {
+    background-color: rgba(232, 69, 139, 0.2) !important;
+  }
+  .color-palomichi .text-amber-500 {
+    color: #E8458B !important;
+  }
+  .color-palomichi .dark\:text-amber-400:is(.dark *) {
+    color: #F175A5 !important;
+  }
 }
 
 @layer utilities {
@@ -429,7 +1064,7 @@
   }
 
   .keyboard-feedback-correct {
-    --key-feedback-color: hsla(var(--accent) / 0.5);
+    --key-feedback-color: hsla(var(--game-correct) / 0.5);
   }
 
   .keyboard-feedback-present {
@@ -450,7 +1085,7 @@
   }
 
   .animate-theme {
-    @apply transition-colors duration-100 ease-in-out;
+    @apply transition-all duration-500 ease-in-out;
   }
 }
 

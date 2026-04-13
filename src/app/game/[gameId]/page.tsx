@@ -43,9 +43,10 @@ import { usePlayerNames } from '@/hooks/use-player-names';
 import { useToast } from '@/hooks/use-toast';
 import { createGame, advanceGameRound, toggleEndVote, surrenderMatch } from '@/lib/actions/game';
 import type { GameDocument } from '@/types/game';
-import type { GuessResult, GuessScore } from '@/lib/wordle';
 import { getKeyboardHints, scoreGuess } from '@/lib/wordle';
 import { cn } from '@/lib/utils';
+import { useColorStyle } from '@/components/color-style-provider';
+import { DictionaryDefinition } from '@/components/daily/dictionary-definition';
 import { ChatDock } from '@/components/chat-dock';
 import { isGuestProfile } from '@/types/user';
 import type { ChatAvailability, ChatContextDescriptor } from '@/types/social';
@@ -198,7 +199,7 @@ const PreviewTile = memo(function PreviewTile({
       onMouseLeave={(e) => onTileTouchEnd(index, e)}
       className={cn(
         'relative h-11 w-11 rounded-2xl border text-center text-lg font-semibold uppercase leading-[2.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur transition-all duration-200 cursor-pointer select-none',
-        'border-white/50 bg-white/40 text-[#2a1409] dark:border-white/15 dark:bg-white/10 dark:text-white',
+        'border-[hsl(var(--border))] bg-white/70 text-[hsl(var(--foreground))] shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-white',
         isSelected && 'ring-2 ring-[hsl(var(--primary))] ring-offset-2 ring-offset-[hsl(var(--panel-neutral))] dark:ring-offset-background',
         isLocked && 'opacity-70 bg-white/20'
       )}
@@ -217,6 +218,8 @@ export default function GamePage() {
   const { db, userId, user, profile } = useFirebase();
   const { toast } = useToast();
   const { theme, resolvedTheme } = useTheme();
+  const { colorStyle } = useColorStyle();
+  const isPalomichi = colorStyle === 'palomichi';
   const isLightMode = resolvedTheme === 'light';
   const isMobile = useIsMobile();
 
@@ -2022,7 +2025,7 @@ export default function GamePage() {
   const sharedEndButtonClasses = cn(
     'inline-flex h-11 items-center justify-center rounded-full border border-transparent text-sm font-semibold uppercase tracking-[0.2em] transition disabled:opacity-60',
     'w-12 gap-0 px-0 sm:w-auto sm:gap-2 sm:px-5',
-    'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-[0_25px_55px_rgba(255,140,0,0.35)] hover:shadow-[0_30px_65px_rgba(255,140,0,0.45)]',
+    'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-[0_25px_55px_hsla(var(--primary)/0.35)] hover:shadow-[0_30px_65px_hsla(var(--primary)/0.45)]',
     'dark:bg-[hsl(var(--primary))]'
   );
 
@@ -2305,7 +2308,12 @@ export default function GamePage() {
 
   return (<>
     <div
-      className="relative min-h-screen overflow-hidden bg-[hsl(var(--panel-neutral))] text-foreground dark:bg-background animate-theme"
+      className={cn(
+        "relative min-h-screen overflow-hidden text-foreground animate-theme",
+        isPalomichi
+          ? isLightMode ? "bg-[#fff0f5]" : "bg-[#1a0f14]"
+          : "bg-[hsl(var(--panel-neutral))] dark:bg-background"
+      )}
       onClick={handleBackgroundClick}
     >
       <GraffitiBackground zIndex={0} />
@@ -2340,7 +2348,12 @@ export default function GamePage() {
       <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-12 pb-6 sm:pt-10">
 
         <div
-          className="relative mx-auto w-full max-w-xl rounded-[32px] border border-[hsl(var(--panel-border))] bg-[hsl(var(--panel-neutral))] px-6 py-8 text-center shadow-[0_25px_65px_rgba(0,0,0,0.25)] backdrop-blur-xl dark:border-[hsla(var(--border)/0.7)] dark:bg-[hsl(var(--card))]"
+          className={cn(
+            "relative mx-auto w-full max-w-xl rounded-[32px] border px-6 py-8 text-center shadow-[0_25px_65px_rgba(0,0,0,0.25)] backdrop-blur-xl",
+            isPalomichi
+              ? isLightMode ? "border-[#ffc8db]/60 bg-white/70" : "border-[hsla(var(--border)/0.7)] bg-[hsl(var(--card))]"
+              : "border-[hsl(var(--panel-border))] bg-[hsl(var(--panel-neutral))] dark:border-[hsla(var(--border)/0.7)] dark:bg-[hsl(var(--card))]"
+          )}
         >
           <div className="absolute right-4 top-4">
             <ThemeToggle
@@ -2348,7 +2361,7 @@ export default function GamePage() {
             />
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="WordMates" className="mx-auto h-20 w-auto drop-shadow-xl" />
+          <img src={isPalomichi ? "/logo2.png" : "/logo.png"} alt="WordMates" className="mx-auto h-20 w-auto drop-shadow-xl" />
           <span
             className="pointer-events-none absolute inset-0 opacity-25"
             style={{
@@ -2356,14 +2369,19 @@ export default function GamePage() {
                 'radial-gradient(circle at 15% 20%, rgba(255,255,255,0.18) 0%, transparent 35%), radial-gradient(circle at 65% 10%, rgba(0,0,0,0.18) 0%, transparent 40%), radial-gradient(circle at 10% 85%, rgba(0,0,0,0.12) 0%, transparent 32%)',
             }}
           />
-          <div className="relative top-5 flex w-full min-w-0 flex-nowrap items-stretch gap-3 overflow-x-auto rounded-[40px] border border-[hsla(var(--panel-border)/0.7)] bg-gradient-to-r from-white via-[hsl(var(--panel-neutral))] to-[hsl(var(--panel-warm))] px-4 py-4 text-left shadow-[0_25px_65px_rgba(0,0,0,0.18)] [scrollbar-gutter:stable] sm:overflow-visible dark:border-white/10 dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12]">
+          <div className={cn(
+            "relative top-5 flex w-full min-w-0 flex-nowrap items-stretch gap-3 overflow-x-auto rounded-[40px] border px-4 py-4 text-left shadow-[0_25px_65px_rgba(0,0,0,0.18)] [scrollbar-gutter:stable] sm:overflow-visible",
+            isPalomichi && isLightMode
+              ? "border-[#ffc8db]/80 bg-gradient-to-r from-white via-[#fff0f5] to-[#ffe4eb]"
+              : "border-[hsla(var(--panel-border)/0.7)] bg-gradient-to-r from-white via-[hsl(var(--panel-neutral))] to-[hsl(var(--panel-warm))] dark:border-white/10 dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12]"
+          )}>
             <div className="flex min-w-max flex-1 items-center gap-3 pr-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[hsla(var(--primary)/0.45)] bg-white px-3 py-1.5 text-left text-foreground shadow-[0_18px_35px_rgba(255,140,0,0.15)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-[hsl(var(--card))] dark:text-[hsl(var(--primary-foreground))]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[hsla(var(--primary)/0.45)] bg-white px-3 py-1.5 text-left text-foreground shadow-[0_18px_35px_hsla(var(--primary)/0.15)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-[hsl(var(--card))] dark:text-[hsl(var(--primary-foreground))]">
                 <span className="text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-muted-foreground sm:text-[11px]">
                   Game ID
                 </span>
                 <span
-                  className="inline-flex items-center rounded-full bg-[hsl(var(--primary))] px-2.5 py-1 font-mono text-[0.58rem] tracking-[0.25em] text-[hsl(var(--primary-foreground))] shadow-[0_10px_25px_rgba(255,140,0,0.35)] sm:px-3 sm:text-xs dark:bg-white/10 dark:text-[hsl(var(--primary))] dark:shadow-none"
+                  className="inline-flex items-center rounded-full bg-[hsl(var(--primary))] px-2.5 py-1 font-mono text-[0.58rem] tracking-[0.25em] text-[hsl(var(--primary-foreground))] shadow-[0_10px_25px_hsla(var(--primary)/0.35)] sm:px-3 sm:text-xs dark:bg-white/10 dark:text-[hsl(var(--primary))] dark:shadow-none"
                   title={displayedGameId}
                 >
                   <span className="hidden truncate sm:inline">{displayedGameId}</span>
@@ -2395,7 +2413,9 @@ export default function GamePage() {
             className={cn(
               'relative mx-auto max-w-lg rounded-[34px] border px-4 py-6 shadow-[0_35px_90px_rgba(0,0,0,0.25)] backdrop-blur-2xl sm:px-6',
               isLightMode
-                ? 'pale-orange-shell text-[#2b1409]'
+                ? isPalomichi
+                  ? 'border border-[#ffc8db]/60 bg-white/70 text-[#5E122F]'
+                  : 'pale-orange-shell text-[#2b1409]'
                 : 'border-white/10 bg-gradient-to-br from-[#0f1119] via-[#0a0c14] to-[#05060a] text-white shadow-[0_35px_120px_rgba(0,0,0,0.65)]'
             )}
           >
@@ -2424,8 +2444,8 @@ export default function GamePage() {
                     <div className="flex justify-center w-full">
                       {modeMeta && (
                         <span className={cn(
-                          "inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] shadow-[0_15px_35px_rgba(255,140,0,0.3)] dark:shadow-none transition-all",
-                          "bg-white border-amber-500/50 text-amber-600 dark:bg-transparent dark:text-amber-400"
+                          "inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] shadow-[0_15px_35px_hsla(var(--primary)/0.3)] dark:shadow-none transition-all",
+                          "bg-white border-[hsla(var(--primary)/0.5)] text-[hsl(var(--primary))] dark:bg-transparent dark:text-[hsl(var(--primary))]"
                         )}>
                           <modeMeta.icon className="h-4 w-4" />
                           <span>{modeMeta.label}</span>
@@ -2460,7 +2480,7 @@ export default function GamePage() {
                     <div className="flex flex-wrap items-center justify-between w-full">
                       {/* Left: Players */}
                       <div className="flex justify-start">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--primary))] px-4 py-2 text-sm text-[hsl(var(--primary-foreground))] shadow-[0_12px_30px_rgba(255,140,0,0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground dark:shadow-none">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--primary))] px-4 py-2 text-sm text-[hsl(var(--primary-foreground))] shadow-[0_12px_30px_hsla(var(--primary)/0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground dark:shadow-none">
                           <Users className="h-4 w-4" />
                           <span className="font-mono text-base text-[hsl(var(--primary-foreground))] dark:text-foreground">{game.players.length}</span>
                         </span>
@@ -2474,7 +2494,7 @@ export default function GamePage() {
                               <span
                                 key={`board-timer-${label}`}
                                 className={cn(
-                                  "inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm shadow-[0_12px_30px_rgba(255,140,0,0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:shadow-none transition-all",
+                                  "inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm shadow-[0_12px_30px_hsla(var(--primary)/0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:shadow-none transition-all",
                                   intent === 'active'
                                     ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] dark:text-white dark:border-white/20"
                                     : "bg-white text-muted-foreground dark:text-muted-foreground",
@@ -2510,7 +2530,7 @@ export default function GamePage() {
                       {/* Game Mode Pill */}
                       {modeMeta && (
                         <span className={cn(
-                          "inline-flex h-9 items-center gap-2 rounded-full border border-transparent px-4 text-xs font-semibold uppercase tracking-[0.25em] shadow-[0_15px_35px_rgba(255,140,0,0.3)] dark:shadow-none transition-all",
+                          "inline-flex h-9 items-center gap-2 rounded-full border border-transparent px-4 text-xs font-semibold uppercase tracking-[0.25em] shadow-[0_15px_35px_hsla(var(--primary)/0.3)] dark:shadow-none transition-all",
                           "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground"
                         )}>
                           <modeMeta.icon className="h-4 w-4" />
@@ -2519,7 +2539,7 @@ export default function GamePage() {
                       )}
 
                       {/* Player Count Pill */}
-                      <span className="inline-flex h-9 items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--primary))] px-4 text-sm text-[hsl(var(--primary-foreground))] shadow-[0_12px_30px_rgba(255,140,0,0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground dark:shadow-none">
+                      <span className="inline-flex h-9 items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--primary))] px-4 text-sm text-[hsl(var(--primary-foreground))] shadow-[0_12px_30px_hsla(var(--primary)/0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground dark:shadow-none">
                         <Users className="h-4 w-4" />
                         <span className="font-mono text-base text-[hsl(var(--primary-foreground))] dark:text-foreground">{game.players.length}</span>
                       </span>
@@ -2545,7 +2565,7 @@ export default function GamePage() {
                     <div className="flex flex-wrap items-center gap-2 ">
                       {modeMeta && (
                         <span className={cn(
-                          "inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] shadow-[0_15px_35px_rgba(255,140,0,0.3)] dark:shadow-none transition-all",
+                          "inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] shadow-[0_15px_35px_hsla(var(--primary)/0.3)] dark:shadow-none transition-all",
                           isMultiplayerGame && game.multiplayerMode === 'pvp' && (game.matchState?.maxWins ?? 1) > 1
                             ? "bg-transparent border-amber-500/50 text-amber-500 dark:text-amber-400"
                             : "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground"
@@ -2584,7 +2604,7 @@ export default function GamePage() {
                         </span>
                       )}
 
-                      <span className="inline-flex items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--primary))] px-4 py-2 text-sm text-[hsl(var(--primary-foreground))] shadow-[0_12px_30px_rgba(255,140,0,0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground dark:shadow-none">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--primary))] px-4 py-2 text-sm text-[hsl(var(--primary-foreground))] shadow-[0_12px_30px_hsla(var(--primary)/0.28)] dark:border-[hsla(var(--primary)/0.45)] dark:bg-gradient-to-r dark:from-[#13141c] dark:via-[#0c0d14] dark:to-[#090a12] dark:text-muted-foreground dark:shadow-none">
                         <Users className="h-4 w-4" />
                         <span className="font-mono text-base text-[hsl(var(--primary-foreground))] dark:text-foreground">{game.players.length}</span>
                       </span>
@@ -2682,15 +2702,15 @@ export default function GamePage() {
                     const { word, evaluations } = lastGuess;
 
                     return (
-                      <div className="mt-3 flex justify-center gap-1.5 opacity-60 select-none">
+                      <div className="mt-3 flex justify-center gap-1.5 opacity-80 select-none">
                         {word.split('').map((char, i) => {
                           const status = evaluations[i];
                           const colorClass =
                             status === 'correct'
-                              ? 'border-green-500/50 bg-green-500/20 text-green-500 dark:text-green-400'
+                              ? 'border-green-500/60 bg-green-500/25 text-green-600 dark:text-green-400'
                               : status === 'present'
-                                ? 'border-amber-500/50 bg-amber-500/20 text-amber-500 dark:text-amber-400'
-                                : 'border-white/40 bg-white/5 text-white/90 dark:border-white/20'; // absent
+                                ? 'border-amber-500/60 bg-amber-500/25 text-amber-600 dark:text-amber-400'
+                                : 'border-[hsl(var(--border))]/60 bg-[hsl(var(--muted))]/40 text-[hsl(var(--muted-foreground))] dark:border-white/20 dark:bg-white/5 dark:text-white/60'; // absent
 
                           return (
                             <div
@@ -2866,8 +2886,9 @@ export default function GamePage() {
 
     {
       showResultPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 px-3 py-6 backdrop-blur-lg sm:px-4 sm:py-10">
-          <motion.div
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/85 px-3 py-6 backdrop-blur-lg sm:px-4 sm:py-10 overflow-y-auto">
+          <div className="flex w-full max-w-xl flex-col gap-3 sm:gap-4 m-auto py-4">
+            <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 10 }}
@@ -2963,7 +2984,6 @@ export default function GamePage() {
                     )}
                 </div>
               </div>
-
               <div className="mt-9 flex w-full flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4">
                 {game?.matchState && !game.matchState.isMatchOver ? (
                   // Check if we are auto-advancing (Final Round)
@@ -3049,7 +3069,21 @@ export default function GamePage() {
                 })()
               )}
             </div>
-          </motion.div>
+            </motion.div>
+
+            {/* Dictionary Definition Block (Below Modal) */}
+            {solutionWord && solutionWord !== 'DEBUG' && solutionWord !== ' ' && (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', duration: 0.5, bounce: 0.3, delay: 0.1 }}
+                className="w-full"
+              >
+                <DictionaryDefinition word={solutionWord} isWinState={didWin} />
+              </motion.div>
+            )}
+          </div>
         </div>
       )
     }

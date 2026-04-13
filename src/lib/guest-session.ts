@@ -1,4 +1,4 @@
-import { DEFAULT_PREFERENCES, type UserProfile, type UserThemePreference } from '@/types/user';
+import { DEFAULT_PREFERENCES, type UserColorStyle, type UserProfile, type UserThemePreference } from '@/types/user';
 
 const STORAGE_KEY = 'wordmates:guest-session';
 export const GUEST_SESSION_EVENT = 'wordmates:guest-session-change';
@@ -8,14 +8,15 @@ interface GuestSessionData {
   username: string;
   avatarSeed?: string;
   theme?: UserThemePreference;
+  colorStyle?: UserColorStyle;
 }
 
-const safeSessionStorage = (): Storage | null => {
+const safeLocalStorage = (): Storage | null => {
   if (typeof window === 'undefined') return null;
   try {
-    return window.sessionStorage;
+    return window.localStorage;
   } catch (error) {
-    console.warn('Session storage unavailable', error);
+    console.warn('Local storage unavailable', error);
     return null;
   }
 };
@@ -26,7 +27,7 @@ const dispatchGuestSessionEvent = () => {
 };
 
 const readGuestSession = (): GuestSessionData | null => {
-  const storage = safeSessionStorage();
+  const storage = safeLocalStorage();
   if (!storage) return null;
   const raw = storage.getItem(STORAGE_KEY);
   if (!raw) return null;
@@ -39,7 +40,7 @@ const readGuestSession = (): GuestSessionData | null => {
 };
 
 const writeGuestSession = (payload: GuestSessionData | null) => {
-  const storage = safeSessionStorage();
+  const storage = safeLocalStorage();
   if (!storage) return;
   if (payload) {
     storage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -61,6 +62,7 @@ export const storeGuestSessionProfile = (payload: {
     username: trimmed,
     avatarSeed: payload.avatarSeed ?? existing?.avatarSeed ?? trimmed,
     theme: existing && existing.uid === payload.uid ? existing.theme : undefined,
+    colorStyle: existing && existing.uid === payload.uid ? existing.colorStyle : undefined,
   };
   writeGuestSession(nextData);
 };
@@ -73,6 +75,9 @@ export const hydrateGuestProfileFromSession = (uid?: string): UserProfile | null
   const preferences = { ...DEFAULT_PREFERENCES };
   if (data.theme) {
     preferences.theme = data.theme;
+  }
+  if (data.colorStyle) {
+    preferences.colorStyle = data.colorStyle;
   }
 
   return {
@@ -92,6 +97,14 @@ export const updateGuestSessionTheme = (theme: UserThemePreference) => {
 };
 
 export const getGuestSessionTheme = (): UserThemePreference | undefined => readGuestSession()?.theme;
+
+export const updateGuestSessionColorStyle = (colorStyle: UserColorStyle) => {
+  const current = readGuestSession();
+  if (!current) return;
+  writeGuestSession({ ...current, colorStyle });
+};
+
+export const getGuestSessionColorStyle = (): UserColorStyle | undefined => readGuestSession()?.colorStyle;
 
 export const clearGuestSession = () => {
   writeGuestSession(null);
