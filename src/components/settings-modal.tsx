@@ -36,6 +36,7 @@ import { sendGameInviteAction } from '@/lib/actions/notifications';
 import { socialPost } from '@/lib/social-client';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/components/firebase-provider';
+import { useSound } from '@/components/sound-provider';
 import { cn } from '@/lib/utils';
 import type { GameType } from '@/types/game';
 
@@ -110,15 +111,18 @@ export function SettingsModal({ isOpen, gameType, onClose, inviteFriendId, invit
       : FORM_DEFAULTS,
   });
 
+  const { playSound } = useSound();
+
   useEffect(() => {
     if (isOpen) {
+      playSound('pop_tap');
       const defaults = inviteFriendId && prefilledPasscode
         ? { ...FORM_DEFAULTS, visibility: 'private' as const, passcode: prefilledPasscode }
         : FORM_DEFAULTS;
       form.reset(defaults);
       setMultiplayerMode('pvp');
     }
-  }, [isOpen, form, inviteFriendId, prefilledPasscode]);
+  }, [isOpen, form, inviteFriendId, prefilledPasscode, playSound]);
 
   const visibilityValue = form.watch('visibility');
 
@@ -132,6 +136,7 @@ export function SettingsModal({ isOpen, gameType, onClose, inviteFriendId, invit
       return;
     }
 
+    playSound('ready');
     setIsSubmitting(true);
     try {
       const cleanedPasscode = values.visibility === 'private' ? values.passcode : '';

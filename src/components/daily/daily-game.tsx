@@ -18,6 +18,7 @@ import { GameGrid, type GridRow } from '@/components/game/game-grid';
 import { DailyNewspaperModal } from '@/components/daily/daily-newspaper-modal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useColorStyle } from '@/components/color-style-provider';
+import { useSound } from '@/components/sound-provider';
 
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
@@ -31,6 +32,7 @@ export function DailyGame() {
     const { colorStyle } = useColorStyle();
     const isPalomichi = colorStyle === 'palomichi';
     const isLightMode = theme === 'light';
+    const { playSound } = useSound();
 
     const [guesses, setGuesses] = useState<GuessResult[]>([]);
     const [currentGuess, setCurrentGuess] = useState('');
@@ -68,11 +70,12 @@ export function DailyGame() {
                 setGameStatus(todayHistory.result);
             }
             setInitializing(false);
+            playSound('ready');
         } else if (user === null) {
             // Not logged in
             setInitializing(false);
         }
-    }, [dailyWord, dailyDate, user, profile, savedGuesses]);
+    }, [dailyWord, dailyDate, user, profile, savedGuesses, playSound]);
 
     const getNextAvailableIndex = useCallback((currentIndex: number, direction: 'forward' | 'backward', currentWord: string) => {
         let nextIndex = currentIndex;
@@ -181,9 +184,10 @@ export function DailyGame() {
             // Move cursor
             const next = getNextAvailableIndex(indexToEdit, 'forward', newWord);
             setSelectedIndex(next);
+            playSound('tap');
         }
 
-    }, [currentGuess, gameStatus, selectedIndex, lockedIndices, getNextAvailableIndex]);
+    }, [currentGuess, gameStatus, selectedIndex, lockedIndices, getNextAvailableIndex, playSound]);
 
     const handleDelete = useCallback(() => {
         if (gameStatus !== 'playing') return;
@@ -228,9 +232,10 @@ export function DailyGame() {
 
             // Move cursor to where we just deleted
             setSelectedIndex(indexToDelete);
+            playSound('click');
         }
 
-    }, [gameStatus, selectedIndex, currentGuess, lockedIndices, getNextAvailableIndex]);
+    }, [gameStatus, selectedIndex, currentGuess, lockedIndices, getNextAvailableIndex, playSound]);
 
 
     // Interaction Handlers
@@ -334,6 +339,7 @@ export function DailyGame() {
         // We should ensure it's fully filled.
         const cleanGuess = currentGuess.replace(/ /g, '');
         if (cleanGuess.length !== WORD_LENGTH) {
+            playSound('wrong');
             toast({ title: 'Too short', variant: 'destructive', duration: 1500 });
             return;
         }
@@ -363,6 +369,7 @@ export function DailyGame() {
                 variant: "destructive",
                 duration: 2000
             });
+            playSound('wrong');
             // Add shake animation logic if I can, but toast is MVP.
             return;
         }
@@ -392,16 +399,25 @@ export function DailyGame() {
         if (isCorrect) {
             setGameStatus('won');
             await recordWin(newGuesses.length);
+            playSound('win');
             toast({ title: 'Splendid!', description: 'You solved the daily word.', className: "bg-green-500 text-white" });
         } else if (newGuesses.length >= MAX_GUESSES) {
             setGameStatus('lost');
             await recordLoss();
+            playSound('loss');
             toast({ title: 'Game Over', description: `The word was ${dailyWord.toUpperCase()}` });
+        } else {
+            // Priority: Green > Orange (no Wrong sound on valid submission results)
+            const hasGreen = evaluations.some(e => e?.result === 'correct');
+            const hasOrange = evaluations.some(e => e?.result === 'present');
+
+            if (hasGreen) playSound('success_green');
+            else if (hasOrange) playSound('success_orange');
         }
 
         setIsSubmitting(false);
 
-    }, [currentGuess, guesses, dailyWord, gameStatus, isSubmitting, profile, recordWin, recordLoss]);
+    }, [currentGuess, guesses, dailyWord, gameStatus, isSubmitting, profile, recordWin, recordLoss, playSound]);
 
     // Handle physical keyboard
     useEffect(() => {
@@ -573,7 +589,10 @@ export function DailyGame() {
                 <div className="mx-auto grid w-full max-w-5xl grid-cols-3 items-center">
                     {/* Left: Back Button */}
                     <div className="flex items-center justify-start">
-                        <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="h-10 w-10 text-inherit hover:bg-black/5 dark:hover:bg-white/10">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                            playSound('quick_pop');
+                            router.push('/');
+                        }} className="h-10 w-10 text-inherit hover:bg-black/5 dark:hover:bg-white/10">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </div>

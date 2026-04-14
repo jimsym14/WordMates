@@ -61,6 +61,7 @@ import { isGuestProfile } from '@/types/user';
 import { useChatRoom, type ChatMessage } from '@/hooks/use-chat-room';
 import { format } from 'date-fns';
 import { sendGameInviteAction } from '@/lib/actions/notifications';
+import { useSound } from '@/components/sound-provider';
 
 // ========================================
 // UTILITY FUNCTIONS
@@ -301,6 +302,7 @@ export function FriendsModal({
   const { toast } = useToast();
   const { user, profile, db, rtdb } = useFirebase();
   const { socket } = useRealtime();
+  const { playSound } = useSound();
   const router = useRouter();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<TabKey>('friends');
@@ -659,6 +661,7 @@ export function FriendsModal({
     setRequestActionId(`${requestId}:${action}`);
     try {
       await socialPost('/api/friends/respond', { requestId, action });
+      playSound(action === 'accept' ? 'ready' : 'cancel');
       toast({
         title: 'Request updated',
         description:
@@ -701,6 +704,7 @@ export function FriendsModal({
         username: normalized,
         message: outgoingMessage.trim() ? outgoingMessage.trim() : undefined,
       });
+      playSound('ready');
       toast({ title: 'Request sent', description: `Invite sent to @${normalized}.` });
       setOutgoingMessage('');
       setInviteUsername('');
@@ -801,6 +805,7 @@ export function FriendsModal({
           ? `Shared link with ${friend.username ? `@${friend.username}` : 'your friend'}.`
           : 'We copied the lobby invite to your clipboard—send it manually in chat.',
       });
+      playSound('ready');
       router.push(`/lobby/${gameId}`);
     } catch (error) {
       const message = error instanceof SocialClientError || error instanceof Error ? error.message : 'Unable to invite friend';
@@ -819,6 +824,7 @@ export function FriendsModal({
       setFriendActionState(`${friend.friendshipId}:join`);
       try {
         const url = passcode ? `/lobby/${lobbyId}?passcode=${passcode}` : `/lobby/${lobbyId}`;
+        playSound('ready');
         router.push(url);
         // Close modal after navigation
         if (onOpenChange) {
@@ -838,6 +844,7 @@ export function FriendsModal({
     }
     setFriendActionState(`${friend.friendshipId}:spectate`);
     try {
+      playSound('quick_pop');
       router.push(`/game/${gameId}?spectate=1`);
     } finally {
       setFriendActionState(null);
@@ -974,7 +981,10 @@ export function FriendsModal({
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => setActiveFriendChat({ friendshipId: friend.friendshipId, userId: friend.userId, displayName: displayLabel })}
+              onClick={() => {
+                playSound('quick_pop');
+                setActiveFriendChat({ friendshipId: friend.friendshipId, userId: friend.userId, displayName: displayLabel });
+              }}
               aria-label="Open chat"
               className="h-6 md:h-7 px-1.5 md:px-2 text-[9px] md:text-[10px] font-bold font-moms bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-foreground dark:text-white border border-black/5 dark:border-white/5"
             >
@@ -1151,7 +1161,10 @@ export function FriendsModal({
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => setActiveFriendChat(null)}
+                  onClick={() => {
+                    playSound('quick_pop');
+                    setActiveFriendChat(null);
+                  }}
                   className="h-8 w-8 text-foreground hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
                   aria-label="Back to friends"
                 >
@@ -1200,7 +1213,10 @@ export function FriendsModal({
             {/* Main Tabs Container (Friends & Requests) */}
             {canUseFriends && (
               <div className="space-y-3">
-                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabKey)}>
+                <Tabs value={activeTab} onValueChange={(value) => {
+                  playSound('click');
+                  setActiveTab(value as TabKey);
+                }}>
                   {/* Tab Triggers */}
                   <TabsList className="flex w-full gap-1 rounded-full bg-black/5 dark:bg-black/30 backdrop-blur-sm p-1 border border-black/5 dark:border-white/10">
                     <TabsTrigger
@@ -1244,14 +1260,22 @@ export function FriendsModal({
                               <div className="flex items-center gap-2">
                                 <Input
                                   value={friendSearchTerm}
-                                  onChange={(event) => setFriendSearchTerm(event.target.value)}
+                                  onChange={(event) => {
+                                    if (event.target.value.length > (friendSearchTerm?.length || 0)) {
+                                      playSound('tap');
+                                    }
+                                    setFriendSearchTerm(event.target.value);
+                                  }}
                                   placeholder="Search friends"
                                   className="w-28 sm:w-36 h-7 text-xs bg-black/5 dark:bg-white/10 border-black/5 dark:border-white/10 backdrop-blur-md placeholder:text-[10px] md:placeholder:text-xs placeholder:text-muted-foreground dark:placeholder:text-white/40 focus:bg-black/10 dark:focus:bg-white/20 transition-all"
                                 />
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => loadFriends()}
+                                  onClick={() => {
+                                    playSound('click');
+                                    loadFriends();
+                                  }}
                                   disabled={friendsState.loading}
                                   aria-label="Refresh friends"
                                 >
@@ -1304,7 +1328,10 @@ export function FriendsModal({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => loadRequests()}
+                                onClick={() => {
+                                  playSound('click');
+                                  loadRequests();
+                                }}
                                 disabled={requestsState.loading}
                                 aria-label="Refresh requests"
                               >
@@ -1317,7 +1344,10 @@ export function FriendsModal({
                               {/* Sub-tabs for Incoming/Outgoing Requests */}
                               <div className="flex p-1 bg-black/5 dark:bg-black/20 rounded-xl border border-black/5 dark:border-white/5 backdrop-blur-sm">
                                 <button
-                                  onClick={() => setRequestsSubTab('incoming')}
+                                  onClick={() => {
+                                    playSound('click');
+                                    setRequestsSubTab('incoming');
+                                  }}
                                   className={cn(
                                     "flex-1 py-2 text-xs font-bold font-moms uppercase tracking-widest rounded-lg transition-all",
                                     requestsSubTab === 'incoming'
@@ -1328,7 +1358,10 @@ export function FriendsModal({
                                   Incoming
                                 </button>
                                 <button
-                                  onClick={() => setRequestsSubTab('outgoing')}
+                                  onClick={() => {
+                                    playSound('click');
+                                    setRequestsSubTab('outgoing');
+                                  }}
                                   className={cn(
                                     "flex-1 py-2 text-xs font-bold font-moms uppercase tracking-widest rounded-lg transition-all",
                                     requestsSubTab === 'outgoing'
@@ -1356,7 +1389,10 @@ export function FriendsModal({
                                     {requestsSubTab === 'outgoing' && (
                                       <Button
                                         size="sm"
-                                        onClick={() => setInviteSheetOpen(true)}
+                                        onClick={() => {
+                                          playSound('pop_tap');
+                                          setInviteSheetOpen(true);
+                                        }}
                                         className="h-8 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-foreground dark:text-white font-bold font-moms border border-black/5 dark:border-white/10"
                                       >
                                         <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -1394,7 +1430,12 @@ export function FriendsModal({
                                             placeholder="username"
                                             className="pl-7 bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/10 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-white/20 font-moms"
                                             value={inviteUsername}
-                                            onChange={(e) => setInviteUsername(e.target.value)}
+                                            onChange={(e) => {
+                                              if (e.target.value.length > (inviteUsername?.length || 0)) {
+                                                playSound('tap');
+                                              }
+                                              setInviteUsername(e.target.value);
+                                            }}
                                             onKeyDown={(e) => {
                                               if (e.key === 'Enter' && !isFriendActionBusy('invite', 'invite')) {
                                                 void handleSendInvite();
@@ -1547,6 +1588,7 @@ function FriendChatPanel({ friendUserId, friendDisplayName }: { friendUserId: st
     if (!message.trim() || !ready) return;
     try {
       await sendMessage(message.trim(), { replyTo: replyTarget });
+      playSound('quick_pop');
       setMessage('');
       setReplyTarget(null);
       setShowEmojiPicker(false);
@@ -1853,6 +1895,7 @@ function FriendChatPanel({ friendUserId, friendDisplayName }: { friendUserId: st
                     <>
                       <button
                         onClick={() => {
+                          playSound('click');
                           if (msg) setReplyTarget(msg);
                           setContextMenu(null);
                         }}
@@ -1863,6 +1906,7 @@ function FriendChatPanel({ friendUserId, friendDisplayName }: { friendUserId: st
                       <div className="h-px bg-black/5 dark:bg-white/10 my-1" />
                       <button
                         onClick={() => {
+                          playSound('click');
                           if (msg) navigator.clipboard.writeText(msg.text);
                           setContextMenu(null);
                           toast({ title: "Copied to clipboard" });
@@ -1942,7 +1986,10 @@ function FriendChatPanel({ friendUserId, friendDisplayName }: { friendUserId: st
             size="icon"
             variant="ghost"
             className="h-10 w-10 shrink-0 text-muted-foreground hover:bg-black/5 hover:text-foreground rounded-full dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={() => {
+              playSound('click');
+              setShowEmojiPicker(!showEmojiPicker);
+            }}
           >
             <Smile className="h-5 w-5" />
           </Button>
@@ -1988,7 +2035,10 @@ function FriendChatPanel({ friendUserId, friendDisplayName }: { friendUserId: st
                 width="100%"
                 height={300}
                 lazyLoadEmojis={true}
-                onEmojiClick={(data) => setMessage(prev => prev + data.emoji)}
+                onEmojiClick={(data) => {
+                  playSound('click');
+                  setMessage(prev => prev + data.emoji);
+                }}
                 previewConfig={{ showPreview: false }}
                 skinTonesDisabled
               />

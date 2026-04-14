@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Compass, Crown, User, UserPlus, Users, Newspaper } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, useMotionValue, useDragControls, animate } from 'framer-motion';
 
 import { Logo } from '@/components/logo';
+import { GraffitiBackground } from '@/components/graffiti-background';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SettingsModal } from '@/components/settings-modal';
 import GreetingChanger from '@/components/greeting-changer';
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useColorStyle } from '@/components/color-style-provider';
 import { useOnlinePlayers } from '@/hooks/use-online-players';
 import { useFriendsModal } from '@/components/friends-modal-provider';
+import { useSound } from '@/components/sound-provider';
 import { useOverviewStats, type LeaderboardStat } from '@/hooks/use-overview-stats';
 import { LobbyInviteToast } from '@/components/lobby-invite-toast';
 import { DailyNewspaperModal } from '@/components/daily/daily-newspaper-modal';
@@ -31,6 +33,7 @@ type PageMode = GameType | 'daily';
 export default function Home() {
   const router = useRouter();
   const { profile, user } = useFirebase();
+  const { playSound } = useSound();
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -57,6 +60,54 @@ export default function Home() {
   const heroGlowLight = isPalomichi
     ? 'radial-gradient(circle, rgba(232, 69, 139, 0.75) 0%, rgba(245, 152, 184, 0.7) 40%, rgba(253, 214, 229, 0.35) 65%, rgba(255, 184, 212, 0.12) 80%)'
     : 'radial-gradient(circle, rgba(255, 143, 53, 0.8) 0%, rgba(255, 193, 134, 0.78) 40%, rgba(255, 175, 110, 0.35) 65%, rgba(255, 160, 96, 0.12) 80%)';
+  
+  const dragY = useMotionValue(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(0);
+  const [isDragging, setIsDragging] = useState(true);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const internalScrollerRef = useRef<HTMLDivElement>(null);
+
+  const [mounted, setMounted] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const smoothScrollY = useSpring(scrollY, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  useEffect(() => {
+    setMounted(true);
+    if (typeof window !== 'undefined') {
+      const h = window.innerHeight;
+      setWindowHeight(h);
+      if (isMobile) {
+        dragY.set(h * 0.65);
+      }
+    }
+  }, [isMobile, dragY]);
+
+  const scrollValue = isMobile ? dragY : smoothScrollY;
+  
+  // On mobile: 0 = fully expanded, peekY = collapsed peek state
+  const logoScale = useTransform(
+    scrollValue,
+    isMobile ? [0, windowHeight * 0.65] : [0, 200],
+    isMobile ? [0.4, 0.9] : [1, 0.4]
+  );
+  const logoOpacity = useTransform(
+    scrollValue,
+    isMobile ? [0, windowHeight * 0.35, windowHeight * 0.65] : [0, 60, 150],
+    isMobile ? [0, 0.3, 1] : [1, 1, 0]
+  );
+  const logoY = useTransform(
+    scrollValue,
+    isMobile ? [0, windowHeight * 0.65] : [0, 150],
+    isMobile ? [-40, 0] : [0, -30]
+  );
+
   const heroGlowBackground = isLightMode ? heroGlowLight : heroGlowDark;
 
   // Register callback for opening settings modal with invite friend datar
@@ -190,6 +241,7 @@ export default function Home() {
   ]), [streak, maxStreak, solvedCount]);
 
   const handleOpenModal = (type: PageMode) => {
+    playSound('pop_tap');
     if (type === 'daily') {
       setShowDailyModal(true);
       setActiveMode('daily');
@@ -200,6 +252,7 @@ export default function Home() {
   };
 
   const handleBrowseLobbies = () => {
+    playSound('pop_tap');
     router.push('/lobbies');
   };
 
@@ -303,7 +356,7 @@ export default function Home() {
       className={cn(
         'group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-full border px-6 py-4 text-sm font-black uppercase tracking-[0.2em] shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-base sm:tracking-[0.25em]',
         isDailyVisuallyActive
-          ? 'border-white/70 text-black shadow-[0_30px_90px_rgba(0,0,0,0.25)]'
+          ? 'border-white/70 text-white shadow-[0_30px_90px_rgba(0,0,0,0.25)]'
           : isLightMode
             ? 'border-white/70 bg-gradient-to-r from-white/95 via-white/80 to-white/65 text-slate-900/80 shadow-[0_18px_45px_rgba(15,23,42,0.12)]'
             : 'border-foreground/30 bg-foreground/10 text-foreground/80'
@@ -315,7 +368,7 @@ export default function Home() {
         className={cn(
           'ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full border border-transparent transition-colors sm:h-8 sm:w-8',
           isDailyActive
-            ? 'bg-white/20 text-black'
+            ? 'bg-white/20 text-white'
             : isLightMode
               ? 'border-white/80 bg-white text-slate-900 shadow-[0_8px_20px_rgba(15,23,42,0.18)]'
               : 'bg-foreground/5 text-foreground'
@@ -328,38 +381,107 @@ export default function Home() {
   );
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-start overflow-hidden px-4 pt-10 pb-12 sm:px-6 sm:pt-12 animate-theme">
+    <div 
+      ref={containerRef}
+      className={cn(
+        "relative flex min-h-screen flex-col items-center justify-start animate-theme",
+        isMobile ? "h-screen overflow-hidden px-0 pt-0" : "px-4 pt-10 pb-12 sm:px-6 sm:pt-12 overflow-x-hidden animate-theme"
+      )}
+    >
       <DailyNewspaperModal manualOpen={showDailyModal} onClose={() => setShowDailyModal(false)} />
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div
           className="absolute left-1/2 top-24 h-[520px] w-[520px] -translate-x-1/2 rounded-full blur-[140px]"
           style={{ background: heroGlowBackground }}
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background via-background/70 to-transparent" />
       </div>
 
-      <div className="z-10 text-center">
-        <Logo />
-      </div>
+      <motion.div
+        className={cn(
+          "relative z-10 w-full text-center sm:px-0 flex flex-col items-center justify-center cursor-pointer",
+          isMobile ? "h-[65vh] shrink-0" : "px-4"
+        )}
+        style={isMobile ? { scale: logoScale, opacity: logoOpacity, y: logoY } : {}}
+        onClick={() => {
+          playSound('pop_tap');
+          router.push('/');
+        }}
+      >
+        {isMobile && <GraffitiBackground position="absolute" zIndex={0} className="opacity-60" />}
+        <Logo className={isMobile ? "w-[340px] h-auto" : ""} />
+      </motion.div>
 
       <motion.section
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35 }}
+        ref={panelRef}
+        drag={isMobile ? "y" : false}
+        dragListener={isMobile ? (!isExpanded || isDragging) : false}
+        dragConstraints={isMobile ? { top: 0, bottom: windowHeight * 0.65 } : false}
+        dragElastic={0.05}
+        onDragEnd={(_, info) => {
+          if (!isMobile) return;
+          const peekY = windowHeight * 0.65;
+          const velocity = info.velocity.y;
+          const currentY = dragY.get();
+
+          // Aggressive snapping
+          if (velocity < -100 || currentY < peekY * 0.5) {
+            // Expand
+            animate(dragY, 0, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
+            setIsExpanded(true);
+          } else {
+            // Collapse
+            animate(dragY, peekY, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
+            setIsExpanded(false);
+          }
+        }}
+        style={isMobile ? { y: dragY, touchAction: isExpanded && !isDragging ? 'auto' : 'none' } : {}}
         className={cn(
-          'neu-shell relative z-10 mt-8 w-full max-w-4xl overflow-hidden rounded-[32px] p-5 backdrop-blur-xl sm:mt-10 sm:rounded-[36px] sm:p-10',
+          'neu-shell relative z-20 w-full max-w-4xl rounded-t-[32px] !rounded-b-none backdrop-blur-xl sm:rounded-[36px] sm:!rounded-b-[36px] flex flex-col',
+          isMobile 
+            ? 'fixed top-0 left-0 right-0 h-screen shadow-[0_-15px_60px_rgba(0,0,0,0.6)] !transition-none' 
+            : 'relative mt-8 sm:mt-10 overflow-hidden p-5 sm:p-10',
           isLightMode
             ? isPalomichi
-              ? 'bg-[#FEEAF0] text-slate-900 transition-[background] duration-700 ease-out'
-              : 'bg-[#FDE8D7] text-slate-900 transition-[background] duration-700 ease-out'
-            : 'text-white'
+              ? 'bg-[#FEEAF0] text-slate-900 transition-[background] duration-700 ease-out sm:bg-[#FEEAF0]'
+              : 'bg-[#FDE8D7] text-slate-900 transition-[background] duration-700 ease-out sm:bg-[#FDE8D7]'
+            : 'bg-[#121212] text-white sm:bg-transparent'
         )}
       >
+        {/* Drag Handle Area */}
+        {isMobile && (
+          <div 
+            className="flex h-12 w-full shrink-0 items-start justify-center pt-5 active:scale-95 transition-transform"
+            style={{ cursor: 'grab', touchAction: 'none' }}
+          >
+            <div className="h-1.5 w-14 rounded-full bg-foreground/25 backdrop-blur-md" />
+          </div>
+        )}
+
+        <motion.div 
+          ref={internalScrollerRef}
+          className={cn(
+            "w-full h-full flex flex-col",
+            isMobile ? "overflow-y-auto overscroll-contain px-5 pb-40" : ""
+          )}
+          onScroll={(e) => {
+            if (!isMobile) return;
+            const target = e.currentTarget;
+            // More lenient threshold for top detection to capture drag earlier
+            if (target.scrollTop <= 10) {
+              setIsDragging(true);
+            } else {
+              setIsDragging(false);
+            }
+          }}
+        >
         <div className="pointer-events-none absolute inset-0 rounded-[36px] border border-white/5" />
         <div className="pointer-events-none absolute -right-16 top-8 h-64 w-64 rounded-full blur-[140px] opacity-70" style={{ background: activeDetails.gradient }} />
 
         <div className="flex flex-col lg:block">
-          <div className="relative z-10 mb-6 w-full order-1 lg:hidden lg:order-none">
+          <div className={cn(
+            "relative z-10 w-full order-1 lg:hidden lg:order-none",
+            isMobile ? "min-h-[90px] flex items-center justify-center mb-2" : "mb-6"
+          )}>
             <GreetingChanger />
           </div>
 
@@ -427,9 +549,11 @@ export default function Home() {
           </div>
         </div>
 
+
+
         <div className="relative grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
           <div className="space-y-8">
-            <div className="hidden text-left lg:block">
+            <div className="hidden text-center lg:block lg:mt-8">
               <GreetingChanger />
             </div>
             <div
@@ -445,7 +569,7 @@ export default function Home() {
                 {browseLobbiesButton}
               </div>
             </div>
-            <Separator className="border-border/70" />
+            <Separator className="border-border/70 lg:-mt-2" />
             <div
               className={cn(
                 'grid gap-4 rounded-3xl p-4 sm:grid-cols-2',
@@ -537,7 +661,9 @@ export default function Home() {
             <div className="pt-2">{browseLobbiesButton}</div>
           </div>
         </div>
-      </motion.section>
+        {isMobile && <div className="h-4 w-full shrink-0" />}
+      </motion.div>
+    </motion.section>
 
       <SettingsModal
         isOpen={modalState.isOpen}

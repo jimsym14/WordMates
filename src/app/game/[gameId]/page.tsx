@@ -55,6 +55,7 @@ import { useGamePresence } from '@/hooks/use-game-presence';
 import { useGameTyping } from '@/hooks/use-game-typing';
 import { Keyboard } from '@/components/keyboard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSound } from '@/components/sound-provider';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -222,6 +223,7 @@ export default function GamePage() {
   const isPalomichi = colorStyle === 'palomichi';
   const isLightMode = resolvedTheme === 'light';
   const isMobile = useIsMobile();
+  const { playSound } = useSound();
 
   const [game, setGame] = useState<GameDocument | null>(null);
   const [loading, setLoading] = useState(true);
@@ -824,6 +826,7 @@ export default function GamePage() {
             endedBy: 'system_disconnect',
           });
           toast({ title: 'Match ended in a draw', description: 'A player disconnected for over a minute.' });
+          playSound('draw');
         } catch (error) {
           console.error('Failed to finish disconnect draw', error);
           disconnectDrawHandledRef.current = false;
@@ -889,11 +892,13 @@ export default function GamePage() {
     const guess = currentGuess.trim().toLowerCase();
 
     if (guess.includes(' ')) {
+      playSound('wrong');
       toast({ variant: 'destructive', title: 'Incomplete word', description: 'Please fill all empty boxes.' });
       return;
     }
 
     if (guess.length !== game.wordLength) {
+      playSound('wrong');
       toast({ variant: 'destructive', title: 'Too short', description: 'Need more letters.' });
       return;
     }
@@ -903,6 +908,7 @@ export default function GamePage() {
     try {
       const isRealWord = await validateWord(guess);
       if (!isRealWord) {
+        playSound('wrong');
         toast({ variant: 'destructive', title: 'Invalid word', description: 'Try a real word.' });
         return;
       }
@@ -982,17 +988,29 @@ export default function GamePage() {
 
       const gameRef = doc(db, 'games', gameId);
       await updateDoc(gameRef, updatePayload);
+
+      // Play result sound if it's not a terminal state (win/loss already handled)
+      if (!isWin && !outOfAttempts) {
+        if (evaluations.includes('correct')) {
+          playSound('success_green');
+        } else if (evaluations.includes('present')) {
+          playSound('success_orange');
+        }
+      }
+
       setLockedIndices(new Set());
       setSelectedIndex(null); // Also clear selection
       if (isCoopMode) {
         clearTyping();
       }
       if (isWin) {
+        playSound('win');
         toast({
           title: isCoopMode ? 'Team victory!' : 'Victory!',
           description: isCoopMode ? 'Your team found the word.' : 'You guessed the word.',
         });
       } else if (outOfAttempts) {
+        playSound('loss');
         toast({ title: 'Out of tries', description: `Answer: ${game.solution.toUpperCase()}` });
       }
 
@@ -1100,6 +1118,7 @@ export default function GamePage() {
       }
 
       setCurrentGuess(newGuess);
+      playSound('tap');
 
       if (isCoopMode) {
         const currentRow = game.guesses?.length ?? 0;
@@ -1119,7 +1138,7 @@ export default function GamePage() {
         }
       }
     },
-    [currentGuess, game?.wordLength, game?.status, game?.multiplayerMode, isMyTurn, isPlayer, lockedIndices, selectedIndex, broadcastTyping, isMobile]
+    [currentGuess, game?.wordLength, game?.status, game?.multiplayerMode, isMyTurn, isPlayer, lockedIndices, selectedIndex, broadcastTyping, isMobile, playSound]
   );
 
   const removeLetter = useCallback(() => {
@@ -1138,6 +1157,7 @@ export default function GamePage() {
       chars[targetIndex] = ' ';
       const newVal = chars.join('').trimEnd();
       setCurrentGuess(newVal);
+      playSound('click');
 
       if (game?.multiplayerMode === 'co-op') {
         const row = game.guesses?.length ?? 0;
@@ -1171,16 +1191,18 @@ export default function GamePage() {
         }
       }
     }
-  }, [canInteract, currentGuess, game?.wordLength, game?.multiplayerMode, game?.guesses?.length, lockedIndices, selectedIndex, broadcastTyping]);
+  }, [canInteract, currentGuess, game?.wordLength, game?.multiplayerMode, game?.guesses?.length, lockedIndices, selectedIndex, broadcastTyping, playSound]);
 
   // Memoized callbacks for Keyboard component to prevent re-renders
   const handleKeyboardReset = useCallback(() => {
     setCurrentGuess('');
-  }, []);
+    playSound('click');
+  }, [playSound]);
 
   const handleKeyboardSubmit = useCallback(() => {
+    playSound('tap');
     void handleSubmit();
-  }, [handleSubmit]);
+  }, [handleSubmit, playSound]);
 
   /* Hidden Input Logic (Dependent on above functions) */
   const hiddenInputRef = useRef<HTMLInputElement>(null);
@@ -1434,12 +1456,13 @@ export default function GamePage() {
   }, [clearDebugResult, debugResultVariant, handleRematch]);
 
   const handleHomeNavigation = useCallback(() => {
+    playSound('quick_pop');
     if (debugResultVariant) {
       clearDebugResult();
       return;
     }
     router.push('/');
-  }, [clearDebugResult, debugResultVariant, router]);
+  }, [clearDebugResult, debugResultVariant, router, playSound]);
 
   const liveGuess = pendingGuess ?? currentGuess;
 

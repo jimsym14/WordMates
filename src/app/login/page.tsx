@@ -23,6 +23,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 
 import { useFirebase } from '@/components/firebase-provider';
+import { useSound } from '@/components/sound-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -188,6 +189,7 @@ export default function LoginPage() {
   const [pendingProvider, setPendingProvider] = useState<AuthProviderType>('google');
   const [pendingMeta, setPendingMeta] = useState<{ email?: string | null; photoURL?: string | null }>({});
   const [activeTab, setActiveTab] = useState<TabKey>('signin');
+  const [hasDismissedDialog, setHasDismissedDialog] = useState(false);
   const isMobile = useIsMobile();
 
   const copy = COPY;
@@ -215,9 +217,16 @@ export default function LoginPage() {
 
   const resetUsernameDialog = useCallback(() => {
     setUsernameDialogOpen(false);
+    setHasDismissedDialog(true);
     setPendingMeta({});
     usernameForm.reset({ username: '' });
-  }, [usernameForm]);
+
+    // If the user cancelled picking a handle but they don't have one,
+    // they can't play, so we sign them out to prevent a broken state.
+    if (!profile?.username) {
+      signOut().catch(console.error);
+    }
+  }, [profile?.username, signOut, usernameForm]);
 
   useEffect(() => {
     if (usernameDialogOpen) {
@@ -227,22 +236,22 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!user || !profile?.username || usernameDialogOpen) return;
-    const timeout = window.setTimeout(() => {
-      router.replace('/');
-    }, 1200);
-    return () => window.clearTimeout(timeout);
+    // Redirect home immediately if we have a valid user + profile
+    router.replace('/');
   }, [profile?.username, router, user, usernameDialogOpen]);
 
   useEffect(() => {
     if (user) return;
     setActiveTab('signin');
     setAuthFeedback(null);
+    setHasDismissedDialog(false);
     signInForm.reset({ identifier: '', password: '' });
     signUpForm.reset({ username: '', email: '', password: '', confirmPassword: '' });
   }, [signInForm, signUpForm, user]);
 
   const handleGuestEnter = async () => {
     if (!auth) return;
+    playSound('pop_tap');
     const validation = usernameSchema.safeParse({ username: guestName });
     if (!validation.success) {
       setGuestError(validation.error.format().username?._errors?.[0] ?? copy.errors.guestTaken);
@@ -318,16 +327,26 @@ export default function LoginPage() {
 
   // Fallback: If auth state detects a user but getRedirectResult failed/was skipped,
   // and we don't have a profile yet, trigger the success flow to check profile/show dialog.
+  // Robust fallback: Trigger profile setup if we have a user but no profile data
   useEffect(() => {
-    if (isAuthReady && user && !isProfileLoading && !profile?.username && !usernameDialogOpen) {
-      handleAuthSuccess(user);
+    if (!isAuthReady || !user || isProfileLoading || profile?.username || usernameDialogOpen || hasDismissedDialog) return;
+
+    // Special catch: if user is anonymous but has no local profile (e.g. cleared session),
+    // we sign them out rather than prompting for a permanent handle.
+    if (user.isAnonymous) {
+      signOut().catch(console.error);
+      return;
     }
-  }, [isAuthReady, user, isProfileLoading, profile, usernameDialogOpen]);
+
+    handleAuthSuccess(user);
+  }, [isAuthReady, user, isProfileLoading, profile, usernameDialogOpen, hasDismissedDialog, signOut]);
 
   const handleGoogleLogin = async () => {
     if (!auth || !db) return;
+    playSound('pop_tap');
     setGoogleLoading(true);
     setAuthFeedback(null);
+    setHasDismissedDialog(false); // Reset to ensure the dialog can re-open if missing handle
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
@@ -510,6 +529,7 @@ export default function LoginPage() {
                   <TabsTrigger
                     key={tab}
                     value={tab}
+                    onClick={() => playSound('click_pallo')}
                     className={cn(
                       'relative z-10 rounded-full px-3 py-2 text-[0.7rem] font-black tracking-[0.35em] transition-colors',
                       'bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=inactive]:bg-transparent data-[state=inactive]:text-white/60'
@@ -568,7 +588,11 @@ export default function LoginPage() {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full rounded-2xl bg-white/90 py-5 text-base font-semibold text-slate-900 hover:bg-white">
+                        <Button 
+                          type="submit" 
+                          className="w-full rounded-2xl bg-white/90 py-5 text-base font-semibold text-slate-900 hover:bg-white"
+                          onClick={() => playSound('pop_tap')}
+                        >
                           {copy.buttons.signIn}
                         </Button>
                         <Button
@@ -671,7 +695,11 @@ export default function LoginPage() {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full rounded-2xl bg-white/90 py-5 text-base font-semibold text-slate-900 hover:bg-white">
+                        <Button 
+                          type="submit" 
+                          className="w-full rounded-2xl bg-white/90 py-5 text-base font-semibold text-slate-900 hover:bg-white"
+                          onClick={() => playSound('pop_tap')}
+                        >
                           {copy.buttons.signUp}
                         </Button>
                         <Button
@@ -721,7 +749,10 @@ export default function LoginPage() {
                           type="button"
                           variant="outline"
                           className="rounded-2xl border-white/30 bg-transparent px-4 py-5 text-white hover:bg-white/10"
-                          onClick={cycleGuestName}
+                          onClick={() => {
+                            cycleGuestName();
+                            playSound('pop_tap');
+                          }}
                         >
                           <RefreshCcw className="mr-2 h-4 w-4" />
                           {copy.buttons.random}

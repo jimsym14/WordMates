@@ -33,6 +33,36 @@ interface DictionaryResponse {
     meanings: Meaning[];
 }
 
+const stripHtml = (html: string) => {
+    if (typeof window === 'undefined') return html;
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+};
+
+/**
+ * Detects if a definition is just a pointer to another word 
+ * (e.g. "plural of swot"). Returns the base word if found.
+ */
+const extractBaseWord = (html: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    
+    // Wiktionary specific class for "Form of" links
+    const link = doc.querySelector('.form-of-definition-link');
+    if (link && link.textContent) {
+        return link.textContent.trim();
+    }
+    
+    // Heuristic fallback for plain text / definition-only blobs
+    const text = doc.body.textContent || "";
+    const formOfMatch = text.match(/^(?:plural|past tense|past participle|present participle|third-person|indicative form|alternative form|plural|archaic form) of\s+([a-z-]+)/i);
+    if (formOfMatch) {
+        return formOfMatch[1];
+    }
+    
+    return null;
+};
+
 const formatPronunciation = (arpabetStr?: string) => {
     if (!arpabetStr) return '';
     const map: Record<string, string> = {
@@ -70,74 +100,162 @@ export function DictionaryDefinition({ word, isWinState }: DictionaryDefinitionP
 
     useEffect(() => {
         let mounted = true;
-        
-        async function fetchDef() {
-            setLoading(true);
-            setError(false);
-            
+
+        async function fetchWiktionary(wordToFetch: string) {
             try {
-                const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-                if (res.ok) {
-                    const json = await res.json();
-                    if (mounted && json && json.length > 0) {
-                        setData(json[0]);
-                        setLoading(false);
-                        return;
+                let currentWord = wordToFetch;
+                let wkRes = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(currentWord)}`);
+                
+                if (!wkRes.ok) {
+                    const sumRes = await fetch(`https://en.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(currentWord)}`);
+                    if (sumRes.ok) {
+                        const sumJson = await sumRes.json();
+                        if (sumJson.title && sumJson.title.toLowerCase() !== currentWord.toLowerCase()) {
+                            currentWord = sumJson.title;
+                            wkRes = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(currentWord)}`);
+                        }
                     }
                 }
-                
-                // Fallback to Datamuse
-                const dmRes = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&md=dr`);
-                if (dmRes.ok) {
-                    const dmJson = await dmRes.json();
-                    const match = dmJson.find((item: any) => item.word.toLowerCase() === word.toLowerCase() && item.defs);
-                    
-                    if (match && match.defs && match.defs.length > 0) {
-                        const mappedMeanings: Meaning[] = match.defs.map((defStr: string) => {
-                            const parts = defStr.split('\t');
-                            let pos = parts.length > 1 ? parts[0] : '';
-                            
-                            // Map abbreviation to full pos string
-                            if (pos === 'n') pos = 'noun';
-                            else if (pos === 'v') pos = 'verb';
-                            else if (pos === 'adj') pos = 'adjective';
-                            else if (pos === 'adv') pos = 'adverb';
-                            
-                            const desc = parts.length > 1 ? parts[1] : defStr;
-                            
-                            return {
-                                partOfSpeech: pos,
-                                definitions: [{ definition: desc }]
-                            };
-                        });
-                        const pronTag = match.tags?.find((t: string) => t.startsWith('pron:'));
-                        const parsedPhonetic = pronTag ? formatPronunciation(pronTag.slice(5)) : '';
 
-                        if (mounted) {
-                            setData({
-                                word: match.word,
-                                phonetic: parsedPhonetic,
-                                meanings: mappedMeanings
+                if (wkRes.ok) {
+                    const wkJson = await wkRes.json();
+                    return { word: currentWord, entries: wkJson.en || [] };
+                }
+            } catch (err) {
+                console.error('Wiktionary fetch error', err);
+            }
+            return null;
+        }
+
+        async function fetchAggregatedDef() {
+            setLoading(true);
+            setError(false);
+
+            try {
+                // 1. Fetch Primary Word
+                const primary = await fetchWiktionary(word);
+                if (!mounted) return;
+
+                if (!primary || primary.entries.length === 0) {
+                    // Fallback to Datamuse if Wiktionary completely fails
+                    const dmRes = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&md=dr`);
+                    if (dmRes.ok) {
+                        const dmJson = await dmRes.json();
+                        const match = dmJson.find((item: any) => item.word.toLowerCase() === word.toLowerCase() && item.defs);
+                        if (match && match.defs && match.defs.length > 0 && mounted) {
+                            const mappedMeanings: Meaning[] = match.defs.map((defStr: string) => {
+                                const parts = defStr.split('\t');
+                                let pos = parts.length > 1 ? parts[0] : '';
+                                if (pos === 'n') pos = 'noun';
+                                else if (pos === 'v') pos = 'verb';
+                                else if (pos === 'adj') pos = 'adjective';
+                                else if (pos === 'adv') pos = 'adverb';
+                                return { partOfSpeech: pos, definitions: [{ definition: parts.length > 1 ? parts[1] : defStr }] };
                             });
+                            setData({ word: match.word, meanings: mappedMeanings });
                             setLoading(false);
                             return;
                         }
                     }
-                }
-                
-                if (mounted) {
                     setError(true);
                     setLoading(false);
+                    return;
                 }
+
+                // 2. Scan for "Form of" to find base word
+                let baseWord: string | null = null;
+                for (const entry of primary.entries) {
+                    for (const def of entry.definitions) {
+                        baseWord = extractBaseWord(def.definition);
+                        if (baseWord) break;
+                    }
+                    if (baseWord) break;
+                }
+
+                // 3. Fetch Base Word if found and distinct
+                let secondary: { word: string, entries: any[] } | null = null;
+                if (baseWord && baseWord.toLowerCase() !== primary.word.toLowerCase()) {
+                    secondary = await fetchWiktionary(baseWord);
+                }
+                if (!mounted) return;
+
+                // 4. Merge Meanings
+                const allMeanings: Meaning[] = [];
+                
+                // Helper to map Wiktionary entries to our internal Meaning type
+                const mapEntries = (entries: any[]) => entries.map((entry: any) => ({
+                    partOfSpeech: entry.partOfSpeech.toLowerCase(),
+                    definitions: entry.definitions.map((def: any) => ({
+                        definition: stripHtml(def.definition),
+                        example: def.examples?.[0] ? stripHtml(def.examples[0]) : undefined
+                    }))
+                }));
+
+                const primaryMeanings = mapEntries(primary.entries);
+                const secondaryMeanings = secondary ? mapEntries(secondary.entries) : [];
+
+                // Filter out "Form of" boilerplate from primary if we have secondary meanings
+                const filteredPrimary = primaryMeanings.map(m => ({
+                    ...m,
+                    definitions: m.definitions.filter(d => !extractBaseWord(d.definition) || !secondary)
+                })).filter(m => m.definitions.length > 0);
+
+                // Combine them
+                // Prioritize primary substantive meanings first, then secondary base meanings
+                allMeanings.push(...filteredPrimary);
+                allMeanings.push(...secondaryMeanings);
+
+                // Dedup by Part of Speech if they match exactly (merge definition lists)
+                const mergedMeanings: Meaning[] = [];
+                allMeanings.forEach(m => {
+                    const existing = mergedMeanings.find(em => em.partOfSpeech === m.partOfSpeech);
+                    if (existing) {
+                        existing.definitions.push(...m.definitions);
+                    } else {
+                        mergedMeanings.push(m);
+                    }
+                });
+
+                // Final cleanup: Limit to top N definitions and unique definitions
+                mergedMeanings.forEach(m => {
+                    const seen = new Set();
+                    m.definitions = m.definitions.filter(d => {
+                        const key = d.definition.toLowerCase().trim();
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    }).slice(0, 3); // Max 3 per part of speech
+                });
+
+                setData({
+                    word: primary.word,
+                    meanings: mergedMeanings.slice(0, 2) // Max 2 parts of speech to save space
+                });
+
+                // 5. Fetch Phonetics (use the simpler word for better results)
+                const phoneticWord = secondary?.word || primary.word;
+                const dmRes = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(phoneticWord)}&md=r`);
+                if (dmRes.ok && mounted) {
+                    const dmJson = await dmRes.json();
+                    const match = dmJson.find((item: any) => item.word.toLowerCase() === phoneticWord.toLowerCase() && item.tags);
+                    if (match) {
+                        const pronTag = match.tags.find((t: string) => t.startsWith('pron:'));
+                        const parsedPhonetic = pronTag ? formatPronunciation(pronTag.slice(5)) : '';
+                        setData(prev => prev ? { ...prev, phonetic: parsedPhonetic } : null);
+                    }
+                }
+
+                setLoading(false);
             } catch (err) {
+                console.error('Fetch error', err);
                 if (mounted) {
                     setError(true);
                     setLoading(false);
                 }
             }
         }
-        
-        fetchDef();
+
+        fetchAggregatedDef();
 
         return () => { mounted = false; };
     }, [word]);

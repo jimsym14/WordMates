@@ -7,6 +7,7 @@ import { ColorStyleProvider } from '@/components/color-style-provider';
 import { FriendsModalProvider } from '@/components/friends-modal-provider';
 import { RealtimeProvider } from '@/components/realtime-provider';
 import { NotificationsProvider } from '@/components/notifications-provider';
+import { SoundProvider } from '@/components/sound-provider';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -15,7 +16,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <ColorStyleProvider>
           <RealtimeProvider>
             <NotificationsProvider>
-              <FriendsModalProvider>{children}</FriendsModalProvider>
+              <SoundProvider>
+                <FriendsModalProvider>{children}</FriendsModalProvider>
+              </SoundProvider>
             </NotificationsProvider>
           </RealtimeProvider>
         </ColorStyleProvider>

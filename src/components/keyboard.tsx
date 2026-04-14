@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { GuessScore } from '@/lib/wordle';
 
+import { useSound } from '@/components/sound-provider';
+
 const keyboardRows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 
 const keyboardTone: Record<GuessScore, string> = {
@@ -44,11 +46,14 @@ const KeyboardKey = memo(function KeyboardKey({
         ? { ['--key-feedback-delay' as string]: `${feedbackDelay}ms` }
         : undefined;
 
+    const { playSound } = useSound();
+
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        playSound('tap');
         onPress(letter);
-    }, [letter, onPress]);
+    }, [letter, onPress, playSound]);
 
     return (
         <button
@@ -117,24 +122,33 @@ export const Keyboard = memo(function Keyboard({
         return map;
     }, [keyboardFeedback]);
 
+    const { playSound } = useSound();
+
     // Memoized handlers for action buttons
     const handleReset = useCallback((e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        playSound('cancel');
         onReset();
-    }, [onReset]);
+    }, [onReset, playSound]);
 
     const handleSubmit = useCallback((e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        playSound('tap');
         onSubmit();
-    }, [onSubmit]);
+    }, [onSubmit, playSound]);
 
     const handleDelete = useCallback((e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        playSound('cancel');
         onDelete();
-    }, [onDelete]);
+    }, [onDelete, playSound]);
+
+    const handleAddLetter = useCallback((letter: string) => {
+        onAddLetter(letter);
+    }, [onAddLetter]);
 
     return (
         <div className="space-y-2.5">
@@ -156,7 +170,7 @@ export const Keyboard = memo(function Keyboard({
                                 pulseActive={keyPulse?.letter === letter}
                                 feedbackEvaluation={feedback?.evaluation}
                                 feedbackDelay={feedback?.delay}
-                                onPress={onAddLetter}
+                                onPress={handleAddLetter}
                             />
                         );
                     })}

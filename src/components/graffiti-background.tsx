@@ -93,7 +93,7 @@ interface GraffitiBackgroundProps {
 
 export function GraffitiBackground({ position = 'fixed', zIndex = -10, className }: GraffitiBackgroundProps = {}) {
   const isMobile = useIsMobile();
-  const letters = useMemo(() => generateLetters(isMobile ? 12 : 40), [isMobile]);
+  const letters = useMemo(() => generateLetters(isMobile ? 24 : 40), [isMobile]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 

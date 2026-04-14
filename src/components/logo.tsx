@@ -10,7 +10,6 @@ export function Logo({ className }: { className?: string }) {
 
   return (
     <div className={cn('relative flex items-center justify-center', className)}>
-      <GraffitiBackground />
       {/* The image is now explicitly placed in a higher stacking context */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

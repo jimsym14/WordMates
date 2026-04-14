@@ -9,12 +9,14 @@ import { cn } from '@/lib/utils';
 import { useFirebase } from '@/components/firebase-provider';
 import { isGuestProfile, type UserThemePreference } from '@/types/user';
 import { updateGuestSessionTheme } from '@/lib/guest-session';
+import { useSound } from '@/components/sound-provider';
 
 type ThemeToggleProps = React.ComponentProps<typeof Button>;
 
 export function ThemeToggle({ className, onClick, ...props }: ThemeToggleProps) {
   const { setTheme, resolvedTheme, theme } = useTheme();
   const { profile, savePreferences } = useFirebase();
+  const { playSound } = useSound();
   const isClient = typeof window !== 'undefined';
   const lastToggleTimeRef = React.useRef(0);
 
@@ -42,6 +44,7 @@ export function ThemeToggle({ className, onClick, ...props }: ThemeToggleProps) 
     const nextTheme = (resolvedTheme ?? theme) === 'dark' ? 'light' : 'dark';
     lastToggleTimeRef.current = Date.now();
     setTheme(nextTheme);
+    playSound('click_pallo');
 
     if (profile) {
       if (isGuestProfile(profile)) {

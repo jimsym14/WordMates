@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useSound } from '@/components/sound-provider';
 
 export interface SettingsSegmentedControlProps<T extends string | number> {
     options: { value: T; label: React.ReactNode }[];
@@ -15,6 +16,7 @@ export function SettingsSegmentedControl<T extends string | number>({
     onChange,
     gameType
 }: SettingsSegmentedControlProps<T>) {
+    const { playSound } = useSound();
     const containerRef = useRef<HTMLDivElement>(null);
 
     const currentIndex = options.findIndex(opt => opt.value === value);
@@ -45,7 +47,10 @@ export function SettingsSegmentedControl<T extends string | number>({
                     <button
                         key={String(option.value)}
                         type="button"
-                        onClick={() => onChange(option.value)}
+                        onClick={() => {
+                            onChange(option.value);
+                            playSound('click_pallo');
+                        }}
                         className={cn(
                             "flex-1 relative z-10 flex items-center justify-center py-2.5 rounded-lg text-sm font-bold font-moms transition-colors",
                             isActive

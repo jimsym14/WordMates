@@ -10,6 +10,7 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFirebase } from '@/components/firebase-provider';
+import { useSound } from '@/components/sound-provider';
 import { cn } from '@/lib/utils';
 import { usePlayerNames } from '@/hooks/use-player-names';
 import type { GameDocument } from '@/types/game';
@@ -69,6 +70,7 @@ const modePillStyles: Record<LobbyMode, string> = {
 export default function LobbyBrowserPage() {
   const router = useRouter();
   const { db } = useFirebase();
+  const { playSound } = useSound();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -187,6 +189,7 @@ export default function LobbyBrowserPage() {
 
   const handleLobbyClick = (lobby: LobbyWithId) => {
     const visibility = lobby.visibility ?? 'public';
+    playSound('quick_pop');
     if (visibility === 'private') {
       if (hasCachedAccess(lobby)) {
         router.push(`/lobby/${lobby.id}`);
@@ -226,6 +229,7 @@ export default function LobbyBrowserPage() {
       setPasscodeDrafts((prev) => ({ ...prev, [lobby.id]: '' }));
       setPasscodeErrors((prev) => ({ ...prev, [lobby.id]: null }));
       setExpandedPrivateId(null);
+      playSound('ready');
       router.push(`/lobby/${lobby.id}`);
     } catch (error) {
       console.error('Failed to unlock lobby', error);
@@ -267,7 +271,10 @@ export default function LobbyBrowserPage() {
     <Button
       type="button"
       variant={value === activeValue ? 'default' : 'outline'}
-      onClick={() => onSelect(value)}
+      onClick={() => {
+        onSelect(value);
+        playSound('click_pallo');
+      }}
       className={cn(
         'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition',
         value === activeValue
@@ -306,7 +313,10 @@ export default function LobbyBrowserPage() {
                   'rounded-full border px-6 py-3 text-xs font-semibold uppercase tracking-[0.4em]',
                   isDark ? 'border-white/30 text-white hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'
                 )}
-                onClick={() => router.push('/')}
+                onClick={() => {
+                  playSound('quick_pop');
+                  router.push('/');
+                }}
               >
                 Home
               </Button>

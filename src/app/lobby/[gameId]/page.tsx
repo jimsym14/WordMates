@@ -25,6 +25,7 @@ import {
 import { arrayUnion, deleteDoc, doc, onSnapshot, runTransaction, updateDoc } from 'firebase/firestore';
 
 import { useFirebase } from '@/components/firebase-provider';
+import { useSound } from '@/components/sound-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -212,6 +213,7 @@ export default function LobbyPage() {
   const params = useParams();
   const router = useRouter();
   const { db, userId, user, profile } = useFirebase();
+  const { playSound } = useSound();
   const { resolvedTheme } = useTheme();
   const { toast } = useToast();
   const gameId = params?.gameId as string;
@@ -470,6 +472,7 @@ export default function LobbyPage() {
               })
             );
             toast({ title: 'Players ready', description: 'Launching the board…' });
+            playSound('ready');
           } catch (error) {
             console.error('Failed to start match from lobby', error);
           }
@@ -564,6 +567,7 @@ export default function LobbyPage() {
     try {
       await navigator.clipboard.writeText(inviteLink);
       setIsCopied(true);
+      playSound('pop_tap');
       toast({ title: 'Link copied', description: 'Share it with a friend.' });
       window.setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
@@ -573,8 +577,9 @@ export default function LobbyPage() {
   }, [inviteLink, toast]);
 
   const handleReturnHome = useCallback(() => {
+    playSound('quick_pop');
     router.push('/');
-  }, [router]);
+  }, [router, playSound]);
 
   const searchParams = useSearchParams();
   const urlPasscode = searchParams?.get('passcode');
@@ -596,6 +601,7 @@ export default function LobbyPage() {
       rememberLobbyPasscode(gameId, trimmedPasscode);
       setRememberedPasscode(trimmedPasscode);
       setPasscodeInput('');
+      playSound('ready');
       // Clear the query param from URL without reloading
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
@@ -646,6 +652,7 @@ export default function LobbyPage() {
     try {
       await navigator.clipboard.writeText(passcodeDisplayValue);
       setIsPasscodeCopied(true);
+      playSound('pop_tap');
       toast({ title: 'Passcode copied', description: 'Share it securely.' });
       window.setTimeout(() => setIsPasscodeCopied(false), 2000);
     } catch (error) {

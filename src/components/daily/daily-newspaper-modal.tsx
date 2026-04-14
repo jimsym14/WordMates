@@ -15,13 +15,14 @@ import { motion } from 'framer-motion';
 import { toBlob } from 'html-to-image';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useColorStyle } from '@/components/color-style-provider';
+import { useSound } from '@/components/sound-provider';
 import { DictionaryDefinition } from './dictionary-definition';
 
 export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { manualOpen?: boolean; preventAutoOpen?: boolean; onClose?: () => void }) {
     const { user, profile } = useFirebase();
     const { isSolved, hasPlayedToday, dailyWord, streak, dailyDate, history } = useDailyStats(profile);
     const [isOpen, setIsOpen] = useState(false);
-    const [dontShowAgain, setDontShowAgain] = useState(false);
+    const [isReminderEnabled, setIsReminderEnabled] = useState(false);
     const router = useRouter();
     const { theme } = useTheme();
     const [timeLeft, setTimeLeft] = useState("");
@@ -180,6 +181,14 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
         return () => clearInterval(timer);
     }, []);
 
+    // Initialize reminder preference from localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const enabled = localStorage.getItem('daily_reminder_enabled');
+            setIsReminderEnabled(enabled === 'true');
+        }
+    }, []);
+
     // Fetch daily solver count
     useEffect(() => {
         const fetchSolverCount = async () => {
@@ -198,6 +207,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
 
     const handleShare = async () => {
         if (!process.browser || isSharing || !newspaperRef.current) return;
+        playSound('pop_tap');
         setIsSharing(true);
 
         const title = `WordMates Daily ${dailyDate}`;
@@ -262,29 +272,36 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
     };
 
 
+    const { volume, isMuted, playSound } = useSound();
+
     useEffect(() => {
         if (manualOpen) {
             setIsOpen(true);
+            playSound('paper_open');
             return;
         }
 
         if (preventAutoOpen) return;
 
-        // Check local storage preference
-        const suppressed = localStorage.getItem('daily_newspaper_suppressed');
-        if (suppressed === 'true') return;
+        // Check local storage preference - must be explicitly 'true' to auto-open
+        const enabled = localStorage.getItem('daily_reminder_enabled');
+        if (enabled !== 'true') return;
 
         // If solved/played, don't auto open
         if (hasPlayedToday) return;
 
         // Wait a bit then open
-        const timer = setTimeout(() => setIsOpen(true), 1500);
+        const timer = setTimeout(() => {
+            setIsOpen(true);
+            playSound('paper_open');
+        }, 1500);
         return () => clearTimeout(timer);
-    }, [manualOpen, hasPlayedToday, preventAutoOpen]);
+    }, [manualOpen, hasPlayedToday, preventAutoOpen, playSound]);
 
     const handleClose = () => {
         // Trigger exit animations first
         setIsClosing(true);
+        playSound('paper_close');
         // Wait for animations to complete before actually closing (snappy!)
         const closeDelay = isMobile ? 280 : 380;
         setTimeout(() => {
@@ -292,9 +309,8 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
             setIsClosing(false);
             setInitialAnimDone(false); // Reset for next open
             if (onClose) onClose();
-            if (dontShowAgain) {
-                localStorage.setItem('daily_newspaper_suppressed', 'true');
-            }
+            // Save reminder preference
+            localStorage.setItem('daily_reminder_enabled', isReminderEnabled ? 'true' : 'false');
         }, closeDelay);
     };
 
@@ -329,7 +345,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                 "data-[state=open]:zoom-in-0 data-[state=closed]:zoom-out-0",
                 "data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0"
             )}>
-                <DialogTitle className="sr-only">Daily Newspaper</DialogTitle>
+                <DialogTitle className="sr-only">Daily Reminder</DialogTitle>
                 <DialogDescription className="sr-only">
                     Daily game announcement and statistics.
                 </DialogDescription>
@@ -741,7 +757,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                                 {dailyDate}
                             </span>
                         </div>
-                        <h2 className="mt-1.5 font-serif text-xl sm:text-2xl font-black uppercase tracking-tight whitespace-nowrap">THE WORDLY POST</h2>
+                        <h2 className="mt-1.5 font-serif text-xl sm:text-2xl font-black uppercase tracking-tight whitespace-nowrap">DAILY REMINDER</h2>
                         <div className="mt-1 flex items-center justify-center gap-4 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest">
                             <span>Vol. {dailyDate.replace(/-/g, '')}</span>
                         </div>
@@ -863,7 +879,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                                         ) : (
                                             <>
                                                 {hasCopied ? <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                                                {hasCopied ? "SENT!" : "SHARE NEWSPAPER"}
+                                                {hasCopied ? "SENT!" : "SHARE RESULTS"}
                                             </>
                                         )}
                                     </Button>
@@ -894,13 +910,13 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
-                                        id="suppress"
-                                        checked={dontShowAgain}
-                                        onChange={(e) => setDontShowAgain(e.target.checked)}
+                                        id="reminder-opt-in"
+                                        checked={isReminderEnabled}
+                                        onChange={(e) => setIsReminderEnabled(e.target.checked)}
                                         className="border-black accent-black"
                                     />
-                                    <label htmlFor="suppress" className="text-[10px] sm:text-xs font-bold uppercase tracking-wide cursor-pointer">
-                                        Don't show this automatically
+                                    <label htmlFor="reminder-opt-in" className="text-[10px] sm:text-xs font-bold uppercase tracking-wide cursor-pointer">
+                                        Remind me automatically every day
                                     </label>
                                 </div>
                             </div>
@@ -909,7 +925,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
 
                     {/* Footer */}
                     <div className="bg-black p-1.5 sm:p-2 text-center text-[9px] sm:text-[10px] font-bold uppercase text-[#f4ebd0]">
-                        WordMates Publishing Co. Est 2024
+                        WordMates Reminder Co. Est 2024
                     </div>
 
                     <motion.button

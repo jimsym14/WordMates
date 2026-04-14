@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { useColorStyle } from '@/components/color-style-provider';
@@ -69,12 +69,21 @@ export default function GreetingChanger() {
   const textColor = colorStyle === 'palomichi' ? '#E8458B' : '#F7931E';
 
   const changeGreeting = useCallback(() => {
-    setCurrentIndex((prevIndex) => {
-      const newIndex = (prevIndex + 1) % greetings.length;
-      setCurrentGreeting(greetings[newIndex]);
-      return newIndex;
-    });
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % greetings.length);
   }, []);
+
+  // Trigger sound when currentIndex changes (manual click or interval)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+  }, [currentIndex]);
+
+  useEffect(() => {
+    setCurrentGreeting(greetings[currentIndex]);
+  }, [currentIndex]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -85,11 +94,13 @@ export default function GreetingChanger() {
   }, [changeGreeting]);
 
   return (
-    <div className="mt-4">
+    <div>
       <AnimatePresence mode="wait">
         <motion.h2
           key={currentIndex}
-          className="font-comic text-xl md:text-2xl font-semibold tracking-wider whitespace-nowrap"
+          onClick={changeGreeting}
+          whileTap={{ scale: 0.95 }}
+          className="font-comic text-lg md:text-xl font-semibold tracking-wider text-center cursor-pointer select-none active:opacity-80 transition-opacity"
           style={{ color: textColor }}
           variants={sentenceVariants}
           initial="hidden"

@@ -14,6 +14,7 @@ import type { FriendRequestSummary } from "@/types/social";
 import type { FriendRealtimeEvent } from "@/types/realtime";
 
 import { useUnreadChats } from "@/hooks/use-unread-chats";
+import { useSound } from "@/components/sound-provider";
 
 export type FriendsModalContextValue = {
   openFriendsModal: () => void;
@@ -39,6 +40,7 @@ export function FriendsModalProvider({ children }: { children: ReactNode }) {
   const canUseFriends = Boolean(user) && !guest;
   const { socket } = useRealtime();
   const [inviteSettingsCallback, setInviteSettingsCallback] = useState<((friendId: string, username: string, passcode: string) => void) | null>(null);
+  const { playSound } = useSound();
 
   const openFriendsModal = useCallback(() => {
     if (!user) {
@@ -52,8 +54,9 @@ export function FriendsModalProvider({ children }: { children: ReactNode }) {
       });
       return;
     }
+    playSound("pop_tap");
     setOpen(true);
-  }, [guest, router, toast, user]);
+  }, [guest, router, toast, user, playSound]);
 
   const refreshPendingRequests = useCallback(async () => {
     if (!canUseFriends) {
