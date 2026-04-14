@@ -110,32 +110,12 @@ export default function GreetingChanger() {
               key={`${char}-${index}`}
               variants={letterVariants}
               className="inline-block"
-              style={{
-                animation: `glow-${index} 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.02 + 0.1}s forwards`,
-              }}
             >
               {char === ' ' ? '\u00A0' : char}
             </motion.span>
           ))}
         </motion.h2>
       </AnimatePresence>
-      <style jsx>{`
-        ${currentGreeting
-          .split('')
-          .map(
-            (_, index) => `
-          @keyframes glow-${index} {
-            0% {
-              text-shadow: 0 0 0px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0);
-            }
-            100% {
-              text-shadow: 0 0 12px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0.6), 0 0 24px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0.4), 0 0 36px rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, 0.2);
-            }
-          }
-        `
-          )
-          .join('\n')}
-      `}</style>
     </div>
   );
 }

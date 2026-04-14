@@ -346,14 +346,19 @@ export default function LoginPage() {
     playSound('pop_tap');
     setGoogleLoading(true);
     setAuthFeedback(null);
-    setHasDismissedDialog(false); // Reset to ensure the dialog can re-open if missing handle
+    setHasDismissedDialog(false);
+    
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      // Reverting to popup for mobile due to reliability issues with redirect flow
-      const credential = await signInWithPopup(auth, provider);
-      await handleAuthSuccess(credential.user);
+      if (isMobile) {
+        // Redirect is more reliable on mobile browsers where popups are often blocked
+        await signInWithRedirect(auth, provider);
+      } else {
+        const credential = await signInWithPopup(auth, provider);
+        await handleAuthSuccess(credential.user);
+      }
     } catch (error) {
       console.error('Google auth failed', error);
       const message =
@@ -361,7 +366,6 @@ export default function LoginPage() {
           ? authMessage(error)
           : 'We could not sign you in with Google.';
       setAuthFeedback(message);
-    } finally {
       setGoogleLoading(false);
     }
   };
