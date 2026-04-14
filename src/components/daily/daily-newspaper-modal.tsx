@@ -272,7 +272,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
     };
 
 
-    const { volume, isMuted, playSound } = useSound();
+    const { volume, isMuted, playSound, triggerHaptic } = useSound();
 
     useEffect(() => {
         if (manualOpen) {
@@ -912,7 +912,12 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
                                         type="checkbox"
                                         id="reminder-opt-in"
                                         checked={isReminderEnabled}
-                                        onChange={(e) => setIsReminderEnabled(e.target.checked)}
+                                        onChange={(e) => {
+                                            const val = e.target.checked;
+                                            setIsReminderEnabled(val);
+                                            playSound('click_pallo');
+                                            triggerHaptic('light');
+                                        }}
                                         className="border-black accent-black"
                                     />
                                     <label htmlFor="reminder-opt-in" className="text-[10px] sm:text-xs font-bold uppercase tracking-wide cursor-pointer">

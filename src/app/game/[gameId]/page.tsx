@@ -223,7 +223,7 @@ export default function GamePage() {
   const isPalomichi = colorStyle === 'palomichi';
   const isLightMode = resolvedTheme === 'light';
   const isMobile = useIsMobile();
-  const { playSound } = useSound();
+  const { playSound, triggerHaptic } = useSound();
 
   const [game, setGame] = useState<GameDocument | null>(null);
   const [loading, setLoading] = useState(true);
@@ -457,6 +457,7 @@ export default function GamePage() {
       return window.setTimeout(() => {
         setRevealedTiles((prev) => {
           if (prev[tileKey]) return prev;
+          triggerHaptic('light');
           return { ...prev, [tileKey]: true };
         });
       }, delay);
@@ -485,8 +486,13 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
-    setShowResultPopup(game?.status === 'completed');
-  }, [game?.status]);
+    if (game?.status === 'completed') {
+      setShowResultPopup(true);
+      triggerHaptic('success');
+    } else {
+      setShowResultPopup(false);
+    }
+  }, [game?.status, triggerHaptic]);
 
   useEffect(() => {
     if (!game) return;

@@ -70,7 +70,6 @@ export function DailyGame() {
                 setGameStatus(todayHistory.result);
             }
             setInitializing(false);
-            playSound('ready');
         } else if (user === null) {
             // Not logged in
             setInitializing(false);
@@ -232,7 +231,7 @@ export function DailyGame() {
 
             // Move cursor to where we just deleted
             setSelectedIndex(indexToDelete);
-            playSound('click');
+            playSound('tap');
         }
 
     }, [gameStatus, selectedIndex, currentGuess, lockedIndices, getNextAvailableIndex, playSound]);

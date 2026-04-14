@@ -22,12 +22,17 @@ type SoundID =
   | 'loss' 
   | 'win';
 
+export type HapticType = 'light' | 'medium' | 'success' | 'warning' | 'heavy';
+
 interface SoundContextType {
   volume: number;
   isMuted: boolean;
+  hapticsEnabled: boolean;
   setVolume: (volume: number) => void;
   setIsMuted: (isMuted: boolean) => void;
+  setHapticsEnabled: (enabled: boolean) => void;
   playSound: (id: SoundID) => void;
+  triggerHaptic: (type: HapticType) => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
@@ -81,6 +86,7 @@ interface SoundLog {
 export function SoundProvider({ children }: { children: React.ReactNode }) {
   const [volume, setVolumeState] = useState(0.5);
   const [isMuted, setIsMutedState] = useState(false);
+  const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [debugLogs, setDebugLogs] = useState<SoundLog[]>([]);
   const [isLocalhost, setIsLocalhost] = useState(false);
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -93,8 +99,11 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedVolume = localStorage.getItem('wordmates-volume');
     const savedMuted = localStorage.getItem('wordmates-muted');
+    const savedHaptics = localStorage.getItem('wordmates-haptics');
+
     if (savedVolume !== null) setVolumeState(parseFloat(savedVolume));
     if (savedMuted !== null) setIsMutedState(savedMuted === 'true');
+    if (savedHaptics !== null) setHapticsEnabledState(savedHaptics === 'true');
   }, []);
 
   const setVolume = (v: number) => {
@@ -107,15 +116,102 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('wordmates-muted', m.toString());
   };
 
+  const setHapticsEnabled = (h: boolean) => {
+    setHapticsEnabledState(h);
+    localStorage.setItem('wordmates-haptics', h.toString());
+  };
+
   const volumeRef = useRef(volume);
   const isMutedRef = useRef(isMuted);
+  const hapticsEnabledRef = useRef(hapticsEnabled);
 
   useEffect(() => {
     volumeRef.current = volume;
     isMutedRef.current = isMuted;
-  }, [volume, isMuted]);
+    hapticsEnabledRef.current = hapticsEnabled;
+  }, [volume, isMuted, hapticsEnabled]);
+
+  const hapticRef = useRef<{ input: HTMLInputElement; label: HTMLLabelElement } | null>(null);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
+    // Create a SINGLE persistent hidden switch for iOS haptics
+    // Placing it far off-screen to avoid any coordinate-math interference (hitbox issues)
+    const container = document.createElement('div');
+    const input = document.createElement('input');
+    const label = document.createElement('label');
+    const id = 'h-trig-stable-v3';
+    
+    input.type = 'checkbox';
+    input.setAttribute('switch', ''); 
+    input.id = id;
+    label.setAttribute('for', id);
+    
+    container.style.position = 'absolute';
+    container.style.top = '-9999px';
+    container.style.left = '-9999px';
+    container.style.width = '1px';
+    container.style.height = '1px';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
+    container.style.zIndex = '-9999';
+    container.style.overflow = 'hidden';
+    
+    container.appendChild(input);
+    container.appendChild(label);
+    document.body.appendChild(container);
+    
+    hapticRef.current = { input, label };
+    
+    return () => {
+      document.body.removeChild(container);
+    };
+  }, []);
+
+  const triggerHaptic = useCallback((type: HapticType) => {
+    if (!hapticsEnabledRef.current || typeof navigator === 'undefined') return;
+
+    // Detect iOS for the switch hack
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+    if (isIOS && hapticRef.current) {
+      // --- iOS 18+ Persistent Switch Hack ---
+      const { input, label } = hapticRef.current;
+      
+      // Manually toggling 'checked' state often helps fire the haptic pulse reliably
+      const toggle = () => {
+        input.checked = !input.checked;
+        label.click();
+      };
+
+      if (type === 'success' || type === 'warning' || type === 'heavy') {
+        toggle();
+        setTimeout(toggle, 80);
+      } else {
+        toggle();
+      }
+    } else if (navigator.vibrate) {
+      // --- Android / Standard Web Vibrate ---
+      const patterns: Record<HapticType, number | number[]> = {
+        light: 8,
+        medium: 15,
+        success: [40, 60, 40],
+        warning: [80, 40, 80],
+        heavy: [100, 50, 100],
+      };
+      navigator.vibrate(patterns[type]);
+    }
+  }, []);
 
   const playSound = useCallback((soundId: SoundID) => {
+    // Map certain sounds to automated haptics
+    if (['tap', 'cancel'].includes(soundId)) triggerHaptic('light');
+    else if (['click', 'pop_tap', 'quick_pop', 'paper_open', 'paper_close'].includes(soundId)) triggerHaptic('medium');
+    else if (['success_green', 'success_orange'].includes(soundId)) triggerHaptic('success');
+    else if (soundId === 'wrong') triggerHaptic('warning');
+    else if (['win', 'loss'].includes(soundId)) triggerHaptic('heavy');
+
     if (isMutedRef.current) return;
 
     // Log to debug console if on localhost
@@ -138,15 +234,18 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     audio.volume = volumeRef.current;
     audio.currentTime = 0;
     audio.play().catch(e => console.warn('Sound playback failed:', e));
-  }, []);
+  }, [triggerHaptic]);
 
   const value = useMemo(() => ({
     volume,
     isMuted,
+    hapticsEnabled,
     setVolume,
     setIsMuted,
-    playSound
-  }), [volume, isMuted, setVolume, setIsMuted, playSound]);
+    setHapticsEnabled,
+    playSound,
+    triggerHaptic
+  }), [volume, isMuted, hapticsEnabled, setVolume, setIsMuted, setHapticsEnabled, playSound, triggerHaptic]);
 
   return (
     <SoundContext.Provider value={value}>

@@ -16,7 +16,7 @@ type ThemeToggleProps = React.ComponentProps<typeof Button>;
 export function ThemeToggle({ className, onClick, ...props }: ThemeToggleProps) {
   const { setTheme, resolvedTheme, theme } = useTheme();
   const { profile, savePreferences } = useFirebase();
-  const { playSound } = useSound();
+  const { playSound, triggerHaptic } = useSound();
   const isClient = typeof window !== 'undefined';
   const lastToggleTimeRef = React.useRef(0);
 
@@ -43,6 +43,7 @@ export function ThemeToggle({ className, onClick, ...props }: ThemeToggleProps) 
 
     const nextTheme = (resolvedTheme ?? theme) === 'dark' ? 'light' : 'dark';
     lastToggleTimeRef.current = Date.now();
+    triggerHaptic('light');
     setTheme(nextTheme);
     playSound('click_pallo');
 

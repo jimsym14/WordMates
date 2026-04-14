@@ -16,7 +16,7 @@ export function SettingsSegmentedControl<T extends string | number>({
     onChange,
     gameType
 }: SettingsSegmentedControlProps<T>) {
-    const { playSound } = useSound();
+    const { playSound, triggerHaptic } = useSound();
     const containerRef = useRef<HTMLDivElement>(null);
 
     const currentIndex = options.findIndex(opt => opt.value === value);
@@ -48,6 +48,7 @@ export function SettingsSegmentedControl<T extends string | number>({
                         key={String(option.value)}
                         type="button"
                         onClick={() => {
+                            triggerHaptic('light');
                             onChange(option.value);
                             playSound('click_pallo');
                         }}

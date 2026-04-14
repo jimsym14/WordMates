@@ -11,7 +11,7 @@ const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
 >(({ className, ...props }, ref) => {
-  const { playSound } = useSound()
+  const { playSound, triggerHaptic } = useSound()
   
   return (
     <SwitchPrimitives.Root
@@ -22,6 +22,7 @@ const Switch = React.forwardRef<
       {...props}
       ref={ref}
       onClick={(e) => {
+        triggerHaptic('light');
         playSound('click_pallo');
         props.onClick?.(e);
       }}

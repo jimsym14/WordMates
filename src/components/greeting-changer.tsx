@@ -98,9 +98,7 @@ export default function GreetingChanger() {
       <AnimatePresence mode="wait">
         <motion.h2
           key={currentIndex}
-          onClick={changeGreeting}
-          whileTap={{ scale: 0.95 }}
-          className="font-comic text-lg md:text-xl font-semibold tracking-wider text-center cursor-pointer select-none active:opacity-80 transition-opacity"
+          className="font-comic text-lg md:text-xl font-semibold tracking-wider text-center select-none transition-opacity"
           style={{ color: textColor }}
           variants={sentenceVariants}
           initial="hidden"

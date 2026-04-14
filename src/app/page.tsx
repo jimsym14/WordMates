@@ -33,7 +33,7 @@ type PageMode = GameType | 'daily';
 export default function Home() {
   const router = useRouter();
   const { profile, user } = useFirebase();
-  const { playSound } = useSound();
+  const { playSound, triggerHaptic } = useSound();
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -62,6 +62,7 @@ export default function Home() {
     : 'radial-gradient(circle, rgba(255, 143, 53, 0.8) 0%, rgba(255, 193, 134, 0.78) 40%, rgba(255, 175, 110, 0.35) 65%, rgba(255, 160, 96, 0.12) 80%)';
   
   const dragY = useMotionValue(0);
+  const dragControls = useDragControls();
   const [isExpanded, setIsExpanded] = useState(false);
   const [windowHeight, setWindowHeight] = useState(0);
   const [isDragging, setIsDragging] = useState(true);
@@ -413,7 +414,8 @@ export default function Home() {
 
       <motion.section
         ref={panelRef}
-        drag={isMobile ? "y" : false}
+        drag="y"
+        dragControls={dragControls}
         dragListener={isMobile ? (!isExpanded || isDragging) : false}
         dragConstraints={isMobile ? { top: 0, bottom: windowHeight * 0.65 } : false}
         dragElastic={0.05}
@@ -423,16 +425,19 @@ export default function Home() {
           const velocity = info.velocity.y;
           const currentY = dragY.get();
 
-          // Aggressive snapping
-          if (velocity < -100 || currentY < peekY * 0.5) {
-            // Expand
+          // Snappy Snap Logic: Easier to snap up (requires only 20% drag)
+          if (velocity < -50 || currentY < peekY * 0.8) {
             animate(dragY, 0, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
             setIsExpanded(true);
+            triggerHaptic('medium');
           } else {
-            // Collapse
             animate(dragY, peekY, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
             setIsExpanded(false);
+            triggerHaptic('medium');
           }
+        }}
+        onPointerUp={() => {
+          if (isMobile) triggerHaptic('light'); // Immediate release feedback
         }}
         style={isMobile ? { y: dragY, touchAction: isExpanded && !isDragging ? 'auto' : 'none' } : {}}
         className={cn(
@@ -447,13 +452,100 @@ export default function Home() {
             : 'bg-[#121212] text-white sm:bg-transparent'
         )}
       >
-        {/* Drag Handle Area */}
+        {/* Universal Top Header (Handle + Profile + Greeting) */}
         {isMobile && (
           <div 
-            className="flex h-12 w-full shrink-0 items-start justify-center pt-5 active:scale-95 transition-transform"
+            className="flex w-full shrink-0 flex-col items-center justify-start pt-4 pb-4 active:scale-[0.99] transition-all z-[50] relative transform-gpu"
             style={{ cursor: 'grab', touchAction: 'none' }}
+            onPointerDown={(e) => {
+              dragControls.start(e);
+              triggerHaptic('light');
+            }}
+            onPointerUp={() => triggerHaptic('medium')}
+            onClick={(e) => {
+              // Exclude clicks on interactive buttons (Profile Pill, Theme Toggle, etc.)
+              if ((e.target as HTMLElement).closest('button')) return;
+              
+              const peekY = windowHeight * 0.65;
+              const nextExpanded = !isExpanded;
+              
+              if (nextExpanded) {
+                animate(dragY, 0, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
+              } else {
+                animate(dragY, peekY, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
+              }
+              
+              setIsExpanded(nextExpanded);
+              triggerHaptic('medium');
+            }}
           >
-            <div className="h-1.5 w-14 rounded-full bg-foreground/25 backdrop-blur-md" />
+            {/* Visual Handle Bar */}
+            <div className="h-1.5 w-14 rounded-full bg-foreground/15 backdrop-blur-md mb-6" />
+
+            {/* Profile Pill Row (Restored to top) */}
+            <div className="relative z-10 mb-4 w-full px-4 transform-gpu">
+              <div
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-[28px] px-4 py-3 text-sm transition-colors duration-300 sm:gap-5 backdrop-blur-3xl',
+                  isLightMode
+                    ? 'bg-[#FFFBF7] shadow-[0_8px_20px_rgba(0,0,0,0.1)] text-slate-900'
+                    : 'border border-white/15 bg-black/40 text-white shadow-[inset_6px_6px_18px_rgba(0,0,0,0.5),inset_-4px_-4px_12px_rgba(255,255,255,0.05)]'
+                )}
+              >
+                <div className="flex flex-1 items-center gap-3">
+                  <UserMenu 
+                    variant="icon" 
+                    className="h-11 w-11 shrink-0" 
+                    onOpen={() => {
+                      if (!isExpanded) {
+                        const peekY = windowHeight * 0.65;
+                        animate(dragY, 0, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
+                        setIsExpanded(true);
+                        triggerHaptic('medium');
+                      }
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <p className={cn('text-[0.55rem] uppercase tracking-[0.4em]', isLightMode ? 'text-slate-600' : 'text-white/60')}>
+                      {statusLabel}
+                    </p>
+                    <p className={cn('truncate text-base font-semibold', isLightMode ? 'text-slate-900' : 'text-white')} title={displayName}>
+                      {displayName}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleFriendsClick}
+                    className={cn(
+                      'relative h-10 w-10 border bg-transparent',
+                      isLightMode ? 'border-slate/60 bg-white/60 text-slate-900' : 'border-white/25 text-white'
+                    )}
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    {(pendingRequestCount > 0 || unreadChatCount > 0) && (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.3rem] items-center justify-center rounded-full bg-destructive px-1 text-[0.65rem] font-semibold text-destructive-foreground animate-shake-periodic">
+                        {pendingRequestCount + unreadChatCount > 99 ? '99+' : pendingRequestCount + unreadChatCount}
+                      </span>
+                    )}
+                  </Button>
+                  <ThemeToggle
+                    className={cn(
+                      'h-10 w-10 rounded-full border',
+                      isLightMode ? 'border-slate/60 bg-white/60 text-slate-900' : 'border-white/25 text-white'
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* The greeting text */}
+            <div className="w-full px-4 overflow-hidden pointer-events-none mt-1">
+              <GreetingChanger />
+            </div>
           </div>
         )}
 
@@ -477,77 +569,6 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 rounded-[36px] border border-white/5" />
         <div className="pointer-events-none absolute -right-16 top-8 h-64 w-64 rounded-full blur-[140px] opacity-70" style={{ background: activeDetails.gradient }} />
 
-        <div className="flex flex-col lg:block">
-          <div className={cn(
-            "relative z-10 w-full order-1 lg:hidden lg:order-none",
-            isMobile ? "min-h-[90px] flex items-center justify-center mb-2" : "mb-6"
-          )}>
-            <GreetingChanger />
-          </div>
-
-          <div className="relative z-10 mb-1 w-full sm:mb-1 order-2 lg:order-none">
-            <div
-              className={cn(
-                'flex w-full items-center gap-3 rounded-[28px] px-4 py-3 text-sm transition-colors duration-300 sm:gap-5 backdrop-blur-xl',
-                isLightMode
-                  ? 'bg-[#FFFBF7] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-900'
-                  : 'border border-white/15 bg-black/25 text-white shadow-[inset_6px_6px_18px_rgba(0,0,0,0.5),inset_-4px_-4px_12px_rgba(255,255,255,0.05)]'
-              )}
-            >
-              <div className="flex flex-1 items-center gap-3">
-                <UserMenu variant="icon" className="h-11 w-11 shrink-0" />
-                <div className="min-w-0">
-                  <p
-                    className={cn(
-                      'text-[0.55rem] uppercase tracking-[0.4em]',
-                      isLightMode ? 'text-slate-600' : 'text-white/60'
-                    )}
-                  >
-                    {statusLabel}
-                  </p>
-                  <p
-                    className={cn(
-                      'truncate text-base font-semibold sm:text-lg',
-                      isLightMode ? 'text-slate-900' : 'text-white'
-                    )}
-                    title={displayName}
-                  >
-                    {displayName}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleFriendsClick}
-                  className={cn(
-                    'relative h-10 w-10 border bg-transparent',
-                    isLightMode ? 'border-slate/60 bg-white/60 text-slate-900' : 'border-white/25 text-white'
-                  )}
-                  aria-label="Open friends and chats"
-                >
-                  <UserPlus className="h-5 w-5" />
-                  <span className="sr-only">Open friends</span>
-                  {(pendingRequestCount > 0 || unreadChatCount > 0) && (
-                    <span
-                      className="absolute -right-1 -top-1 flex h-5 min-w-[1.3rem] items-center justify-center rounded-full bg-destructive px-1 text-[0.65rem] font-semibold text-destructive-foreground animate-shake-periodic"
-                    >
-                      {pendingRequestCount + unreadChatCount > 99 ? '99+' : pendingRequestCount + unreadChatCount}
-                    </span>
-                  )}
-                </Button>
-                <ThemeToggle
-                  className={cn(
-                    'h-10 w-10 rounded-full border',
-                    isLightMode ? 'border-slate/60 bg-white/60 text-slate-900' : 'border-white/25 text-white'
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
 
 

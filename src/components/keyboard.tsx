@@ -46,14 +46,13 @@ const KeyboardKey = memo(function KeyboardKey({
         ? { ['--key-feedback-delay' as string]: `${feedbackDelay}ms` }
         : undefined;
 
-    const { playSound } = useSound();
+    const { playSound, triggerHaptic } = useSound();
 
-    const handlePointerDown = useCallback((e: React.PointerEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleTouch = useCallback((e: React.PointerEvent | React.TouchEvent) => {
+        triggerHaptic('light');
         playSound('tap');
         onPress(letter);
-    }, [letter, onPress, playSound]);
+    }, [letter, onPress, playSound, triggerHaptic]);
 
     return (
         <button
@@ -73,7 +72,7 @@ const KeyboardKey = memo(function KeyboardKey({
                 feedbackEvaluation && `keyboard-feedback-${feedbackEvaluation}`,
                 (!canInteract) && 'opacity-60'
             )}
-            onPointerDown={handlePointerDown}
+            onPointerDown={handleTouch}
             disabled={!canInteract}
             aria-label={`Use letter ${letter}`}
         >
@@ -122,29 +121,26 @@ export const Keyboard = memo(function Keyboard({
         return map;
     }, [keyboardFeedback]);
 
-    const { playSound } = useSound();
+    const { playSound, triggerHaptic } = useSound();
 
     // Memoized handlers for action buttons
-    const handleReset = useCallback((e: React.PointerEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleReset = useCallback((e: React.PointerEvent | React.TouchEvent) => {
+        triggerHaptic('light');
         playSound('cancel');
         onReset();
-    }, [onReset, playSound]);
+    }, [onReset, playSound, triggerHaptic]);
 
-    const handleSubmit = useCallback((e: React.PointerEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleSubmit = useCallback((e: React.PointerEvent | React.TouchEvent) => {
+        triggerHaptic('light');
         playSound('tap');
         onSubmit();
-    }, [onSubmit, playSound]);
+    }, [onSubmit, playSound, triggerHaptic]);
 
-    const handleDelete = useCallback((e: React.PointerEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        playSound('cancel');
+    const handleDelete = useCallback((e: React.PointerEvent | React.TouchEvent) => {
+        triggerHaptic('light');
+        playSound('tap');
         onDelete();
-    }, [onDelete, playSound]);
+    }, [onDelete, playSound, triggerHaptic]);
 
     const handleAddLetter = useCallback((letter: string) => {
         onAddLetter(letter);
@@ -183,7 +179,7 @@ export const Keyboard = memo(function Keyboard({
                     onPointerDown={handleReset}
                     disabled={!canInteract}
                 >
-                    <RotateCcw className="h-4 w-4" /> Reset row
+                    <RotateCcw className="h-4 w-4" /> Reset
                 </Button>
                 <button
                     type="button"
