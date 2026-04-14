@@ -45,9 +45,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import {
-  findEmailByUsername,
   fetchProfile,
-  isUsernameAvailable,
   isUsernameValid,
   sanitizeUsername,
   upsertProfile,
@@ -99,6 +97,7 @@ const COPY = {
     guestTaken: 'Handle already in use. Try another vibe!',
     credentialsRequired: 'Provide a username or an email to continue.',
     usernameSaveFailed: "We couldn't save that username. Try again.",
+    lookupUnavailable: 'Username lookup is temporarily unavailable. Try email instead.',
   },
   dialog: {
     title: 'Pick your permanent username',
@@ -179,6 +178,7 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { auth, db, user, profile, signOut, sessionConflict, retrySessionClaim, isAuthReady, isProfileLoading } = useFirebase();
+  const { playSound } = useSound();
   const { toast } = useToast();
   const [guestName, setGuestName] = useState(generateGuestHandle);
   const [guestLoading, setGuestLoading] = useState(false);
@@ -347,11 +347,10 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setAuthFeedback(null);
     setHasDismissedDialog(false);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-
       if (isMobile) {
         // Redirect is more reliable on mobile browsers where popups are often blocked
         await signInWithRedirect(auth, provider);
@@ -361,6 +360,25 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('Google auth failed', error);
+      if (
+        error instanceof FirebaseError &&
+        (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user')
+      ) {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError) {
+          console.error('Google redirect fallback failed', redirectError);
+          const redirectMessage =
+            redirectError instanceof FirebaseError
+              ? authMessage(redirectError)
+              : 'We could not sign you in with Google.';
+          setAuthFeedback(redirectMessage);
+          setGoogleLoading(false);
+          return;
+        }
+      }
+
       const message =
         error instanceof FirebaseError
           ? authMessage(error)
@@ -376,10 +394,7 @@ export default function LoginPage() {
     try {
       let email = values.identifier.trim();
       if (!email.includes('@')) {
-        const lookup = await findEmailByUsername(db, email);
-        if (!lookup) {
-          throw new Error(copy.errors.userNotFound);
-        }
+        const lookup = await resolveUsernameEmail(email);
         email = lookup;
       }
       await signInWithEmailAndPassword(auth, email, values.password);
@@ -414,7 +429,7 @@ export default function LoginPage() {
         return;
       }
 
-      const available = await isUsernameAvailable(db, username);
+      const available = await checkUsernameAvailable(username);
       if (!available) {
         signUpForm.setError(providedUsername ? 'username' : 'email', { message: copy.errors.usernameTaken });
         return;
@@ -443,7 +458,7 @@ export default function LoginPage() {
     if (!auth || !db || !auth.currentUser) return;
     try {
       const username = sanitizeUsername(values.username);
-      const available = await isUsernameAvailable(db, username, auth.currentUser.uid);
+      const available = await checkUsernameAvailable(username, auth.currentUser.uid);
       if (!available) {
         usernameForm.setError('username', { message: copy.errors.usernameTaken });
         return;
@@ -470,6 +485,40 @@ export default function LoginPage() {
 
   const showRedirectScreen = Boolean(user && profile?.username && !usernameDialogOpen);
 
+  const resolveUsernameEmail = useCallback(async (identifier: string) => {
+    const response = await fetch('/api/auth/username-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: sanitizeUsername(identifier) }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { email?: string; error?: string };
+    if (response.ok && payload.email) {
+      return payload.email;
+    }
+
+    if (response.status === 404) {
+      throw new Error(copy.errors.userNotFound);
+    }
+
+    throw new Error(payload.error || copy.errors.lookupUnavailable);
+  }, [copy.errors.lookupUnavailable, copy.errors.userNotFound]);
+
+  const checkUsernameAvailable = useCallback(async (username: string, currentUid?: string) => {
+    const response = await fetch('/api/auth/username-available', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: sanitizeUsername(username), currentUid }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { available?: boolean; error?: string };
+    if (response.ok && typeof payload.available === 'boolean') {
+      return payload.available;
+    }
+
+    throw new Error(payload.error || copy.errors.lookupUnavailable);
+  }, [copy.errors.lookupUnavailable]);
+
   if (sessionConflict) {
     return (
       <SessionConflictScreen
@@ -490,7 +539,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#1a0800] via-[#050301] to-[#120400] text-white font-moms">
-      <OrangePulseBackdrop />
+      <OrangePulseBackdrop reducedMotion={Boolean(isMobile)} />
       <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-start gap-12 px-4 pb-12 pt-16">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -860,32 +909,49 @@ const GoogleIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-function OrangePulseBackdrop() {
+function OrangePulseBackdrop({ reducedMotion = false }: { reducedMotion?: boolean }) {
   return (
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-[#401600] via-[#1b0600] to-[#2a0c00] opacity-95" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,155,92,0.35),_transparent_65%)]" />
-      <motion.div
-        aria-hidden
-        className="absolute left-1/2 top-[-35%] h-[120vh] w-[150vw] -translate-x-1/2 opacity-90 blur-[120px]"
-        style={{ background: 'radial-gradient(circle at center, rgba(255,190,130,0.85), rgba(10,5,2,0))' }}
-        animate={{ scale: [0.95, 1.2, 0.95], y: [-20, 10, -20] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        aria-hidden
-        className="absolute bottom-[-25%] left-1/3 h-[120vh] w-[140vh] opacity-85 blur-[150px]"
-        style={{ background: 'radial-gradient(circle at center, rgba(255,120,64,0.9), rgba(10,5,2,0))' }}
-        animate={{ scale: [1.05, 0.9, 1.05], x: [0, 80, 0] }}
-        transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        aria-hidden
-        className="absolute inset-x-0 bottom-[-5%] h-[90vh] opacity-80 blur-[120px]"
-        style={{ background: 'radial-gradient(circle at center, rgba(255,94,0,0.75), rgba(10,5,2,0))' }}
-        animate={{ scale: [0.85, 1.25, 0.85], y: [0, -30, 0] }}
-        transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-      />
+      {reducedMotion ? (
+        <>
+          <div
+            aria-hidden
+            className="absolute left-1/2 top-[-20%] h-[95vh] w-[120vw] -translate-x-1/2 opacity-85 blur-[70px]"
+            style={{ background: 'radial-gradient(circle at center, rgba(255,190,130,0.78), rgba(10,5,2,0))' }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-x-0 bottom-[-10%] h-[70vh] opacity-70 blur-[70px]"
+            style={{ background: 'radial-gradient(circle at center, rgba(255,94,0,0.62), rgba(10,5,2,0))' }}
+          />
+        </>
+      ) : (
+        <>
+          <motion.div
+            aria-hidden
+            className="absolute left-1/2 top-[-35%] h-[120vh] w-[150vw] -translate-x-1/2 opacity-90 blur-[120px]"
+            style={{ background: 'radial-gradient(circle at center, rgba(255,190,130,0.85), rgba(10,5,2,0))' }}
+            animate={{ scale: [0.95, 1.2, 0.95], y: [-20, 10, -20] }}
+            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            aria-hidden
+            className="absolute bottom-[-25%] left-1/3 h-[120vh] w-[140vh] opacity-85 blur-[150px]"
+            style={{ background: 'radial-gradient(circle at center, rgba(255,120,64,0.9), rgba(10,5,2,0))' }}
+            animate={{ scale: [1.05, 0.9, 1.05], x: [0, 80, 0] }}
+            transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            aria-hidden
+            className="absolute inset-x-0 bottom-[-5%] h-[90vh] opacity-80 blur-[120px]"
+            style={{ background: 'radial-gradient(circle at center, rgba(255,94,0,0.75), rgba(10,5,2,0))' }}
+            animate={{ scale: [0.85, 1.25, 0.85], y: [0, -30, 0] }}
+            transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </>
+      )}
     </div>
   );
 }

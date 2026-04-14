@@ -18,6 +18,12 @@ service cloud.firestore {
       allow write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // --- Session Locks (single active device/session guard) ---
+    match /sessionLocks/{uid} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     match /games/{gameId} {
       allow read, write: if isAuthenticated(); 
     }
