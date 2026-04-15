@@ -398,12 +398,10 @@ export function DailyGame() {
         if (isCorrect) {
             setGameStatus('won');
             await recordWin(newGuesses.length);
-            playSound('win');
             toast({ title: 'Splendid!', description: 'You solved the daily word.', className: "bg-green-500 text-white" });
         } else if (newGuesses.length >= MAX_GUESSES) {
             setGameStatus('lost');
             await recordLoss();
-            playSound('loss');
             toast({ title: 'Game Over', description: `The word was ${dailyWord.toUpperCase()}` });
         } else {
             // Priority: Green > Orange (no Wrong sound on valid submission results)
@@ -649,6 +647,7 @@ export function DailyGame() {
                 <DailyNewspaperModal
                     manualOpen={gameStatus !== 'playing'}
                     preventAutoOpen={true}
+                    resultState={gameStatus === 'playing' ? null : gameStatus}
                     onClose={() => { /* Option to stay on board? or just keep it open? logic usually handles close itself */ }}
                 />
 

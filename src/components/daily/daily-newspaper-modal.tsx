@@ -18,7 +18,19 @@ import { useColorStyle } from '@/components/color-style-provider';
 import { useSound } from '@/components/sound-provider';
 import { DictionaryDefinition } from './dictionary-definition';
 
-export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { manualOpen?: boolean; preventAutoOpen?: boolean; onClose?: () => void }) {
+type DailyResultState = 'won' | 'lost' | null;
+
+export function DailyNewspaperModal({
+    manualOpen,
+    preventAutoOpen,
+    onClose,
+    resultState = null,
+}: {
+    manualOpen?: boolean;
+    preventAutoOpen?: boolean;
+    onClose?: () => void;
+    resultState?: DailyResultState;
+}) {
     const { user, profile } = useFirebase();
     const { isSolved, hasPlayedToday, dailyWord, streak, dailyDate, history } = useDailyStats(profile);
     const [isOpen, setIsOpen] = useState(false);
@@ -155,6 +167,7 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
     }, [displayStreak]);
 
     const newspaperRef = useRef<HTMLDivElement>(null);
+    const resultSoundKeyRef = useRef<string | null>(null);
 
     // Countdown Logic
     useEffect(() => {
@@ -297,6 +310,28 @@ export function DailyNewspaperModal({ manualOpen, preventAutoOpen, onClose }: { 
         }, 1500);
         return () => clearTimeout(timer);
     }, [manualOpen, hasPlayedToday, preventAutoOpen, playSound]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            resultSoundKeyRef.current = null;
+            return;
+        }
+
+        const resolvedResult: DailyResultState = resultState ?? (displayHasPlayed ? (displayIsSolved ? 'won' : 'lost') : null);
+        if (!resolvedResult) return;
+
+        const key = `${dailyDate}:${resolvedResult}`;
+        if (resultSoundKeyRef.current === key) return;
+        resultSoundKeyRef.current = key;
+
+        const timeout = window.setTimeout(() => {
+            playSound(resolvedResult === 'won' ? 'win' : 'loss');
+        }, 140);
+
+        return () => {
+            window.clearTimeout(timeout);
+        };
+    }, [dailyDate, displayHasPlayed, displayIsSolved, isOpen, playSound, resultState]);
 
     const handleClose = () => {
         // Trigger exit animations first

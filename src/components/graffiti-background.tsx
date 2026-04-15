@@ -18,9 +18,24 @@ const useIsMobile = () => {
 };
 
 const fontFamilies = [
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
+  '"Times New Roman", "Times", serif',
   '"Soopafresh", cursive',
   '"Moms", cursive',
-  '"Space Grotesk", "Inter", sans-serif',
+  '"Space Grotesk", "Trebuchet MS", sans-serif',
   '"Poppins", "Nunito", sans-serif',
   '"Comic Sans MS", "Comic Neue", cursive',
   '"Playfair Display", "Times New Roman", serif',
@@ -74,8 +89,8 @@ const generateLetters = (count: number): Letter[] => {
       x: random() * 100,
       y: random() * 100,
       rotation: random() * 120 - 60,
-      opacity: 0.08 + random() * 0.18,
-      fontSize: 2 + random() * 6,
+      opacity: 0.2 + random() * 0.22,
+      fontSize: 2.6 + random() * 8,
       fontFamily: fontFamilies[Math.floor(random() * fontFamilies.length)],
       depth: 0.1 + random() * 0.9,
       animationDuration: 10 + random() * 15,
@@ -93,7 +108,7 @@ interface GraffitiBackgroundProps {
 
 export function GraffitiBackground({ position = 'fixed', zIndex = -10, className }: GraffitiBackgroundProps = {}) {
   const isMobile = useIsMobile();
-  const letters = useMemo(() => generateLetters(isMobile ? 24 : 40), [isMobile]);
+  const letters = useMemo(() => generateLetters(isMobile ? 28 : 70), [isMobile]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
@@ -166,7 +181,7 @@ export function GraffitiBackground({ position = 'fixed', zIndex = -10, className
                 animationDelay: `-${format(letter.animationDuration * letter.animationPhase)}s`,
                 color: 'hsl(var(--floating-letter) / 0.92)',
                 fontFamily: letter.fontFamily,
-                textShadow: '0 18px 45px hsla(var(--hero-glow-ambient) / 0.45)',
+                textShadow: '0 22px 58px hsla(var(--hero-glow-ambient) / 0.55), 0 2px 1px hsla(var(--hero-glow-ambient) / 0.28)',
               }}
             >
               {letter.char}

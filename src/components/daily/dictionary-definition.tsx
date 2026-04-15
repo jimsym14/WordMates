@@ -272,17 +272,19 @@ export function DictionaryDefinition({ word, isWinState }: DictionaryDefinitionP
     let textClass = '';
     let accentClass = '';
     let subtleTextClass = '';
+    let paperSurfaceClass = '';
+    let paperGrainOpacityClass = 'opacity-[0.06]';
 
     if (isWinState) {
         // WIN (Very subtle green tint)
         if (isPalomichi) {
-            containerBgClass = isLight ? "bg-[#e8f8ed]/30" : "bg-[#1e3526]/30";
+            containerBgClass = isLight ? "bg-[#f8efe6]" : "bg-[#1e3526]/30";
             borderClass = isLight ? "border-[#3a7a4a]/40" : "border-[#7cf0a6]/40";
             textClass = isLight ? "text-[#1e5230]" : "text-[#7cf0a6]";
             accentClass = isLight ? "text-[#143d22]" : "text-[#5ed389]";
             subtleTextClass = isLight ? "text-[#1e5230]/70" : "text-[#7cf0a6]/70";
         } else {
-            containerBgClass = isLight ? "bg-[#e6f2e6]/30" : "bg-[#1c2e1c]/30";
+            containerBgClass = isLight ? "bg-[#f6eddc]" : "bg-[#1c2e1c]/30";
             borderClass = isLight ? "border-[#3a6a38]/40" : "border-[#9ae39a]/40";
             textClass = isLight ? "text-[#1e3b1c]" : "text-[#9ae39a]";
             accentClass = isLight ? "text-[#132812]" : "text-[#b2f5b2]";
@@ -291,13 +293,13 @@ export function DictionaryDefinition({ word, isWinState }: DictionaryDefinitionP
     } else {
         // LOSE (Very subtle red tint)
         if (isPalomichi) {
-            containerBgClass = isLight ? "bg-[#fce8ec]/30" : "bg-[#3a1a20]/30";
+            containerBgClass = isLight ? "bg-[#f8ece4]" : "bg-[#3a1a20]/30";
             borderClass = isLight ? "border-[#7F1D3C]/40" : "border-[#f29bab]/40";
             textClass = isLight ? "text-[#7F1D3C]" : "text-[#f29bab]";
             accentClass = isLight ? "text-[#5c1328]" : "text-[#fcbbc8]";
             subtleTextClass = isLight ? "text-[#7F1D3C]/70" : "text-[#f29bab]/70";
         } else {
-            containerBgClass = isLight ? "bg-[#f8e4e4]/30" : "bg-[#321818]/30";
+            containerBgClass = isLight ? "bg-[#f7ede4]" : "bg-[#321818]/30";
             borderClass = isLight ? "border-[#521c1c]/40" : "border-[#e39a9a]/40";
             textClass = isLight ? "text-[#521c1c]" : "text-[#e39a9a]";
             accentClass = isLight ? "text-[#361111]" : "text-[#fab6b6]";
@@ -305,11 +307,16 @@ export function DictionaryDefinition({ word, isWinState }: DictionaryDefinitionP
         }
     }
 
+    if (isLight) {
+        paperSurfaceClass = "bg-[linear-gradient(180deg,rgba(255,251,244,0.97)_0%,rgba(245,236,222,0.97)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_8px_22px_rgba(64,45,22,0.14)]";
+        paperGrainOpacityClass = 'opacity-[0.08]';
+    }
+
     if (loading) {
         return (
-            <div className={cn("mt-3 flex min-h-[100px] w-full flex-col items-center justify-center border-2 border-dashed p-4 relative overflow-hidden shadow-inner", containerBgClass, borderClass, textClass)}>
+            <div className={cn("mt-3 flex min-h-[100px] w-full flex-col items-center justify-center border-2 border-dashed p-4 relative overflow-hidden shadow-inner", containerBgClass, paperSurfaceClass, borderClass, textClass)}>
                  <div 
-                    className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                    className={cn("absolute inset-0 pointer-events-none", paperGrainOpacityClass)}
                     style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
                     }}
@@ -322,9 +329,9 @@ export function DictionaryDefinition({ word, isWinState }: DictionaryDefinitionP
 
     if (error || !data) {
         return (
-            <div className={cn("mt-3 flex w-full flex-col items-center justify-center p-3 sm:p-4 border-2 border-dashed relative overflow-hidden shadow-inner text-center", containerBgClass, borderClass, textClass)}>
+            <div className={cn("mt-3 flex w-full flex-col items-center justify-center p-3 sm:p-4 border-2 border-dashed relative overflow-hidden shadow-inner text-center", containerBgClass, paperSurfaceClass, borderClass, textClass)}>
                 <div 
-                    className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                    className={cn("absolute inset-0 pointer-events-none", paperGrainOpacityClass)}
                     style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
                     }}
@@ -343,10 +350,10 @@ export function DictionaryDefinition({ word, isWinState }: DictionaryDefinitionP
     const definitionsToShow = primaryMeaning?.definitions.slice(0, 2) || [];
 
     return (
-        <div className={cn("flex w-full flex-col p-4 sm:p-5 border-2 border-dashed rounded-xl relative overflow-hidden shadow-sm text-left", containerBgClass, borderClass, textClass)}>
+        <div className={cn("flex w-full flex-col p-4 sm:p-5 border-2 border-dashed rounded-xl relative overflow-hidden shadow-sm text-left", containerBgClass, paperSurfaceClass, borderClass, textClass)}>
             {/* Grain Overlay */}
             <div 
-                className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                className={cn("absolute inset-0 pointer-events-none", paperGrainOpacityClass)}
                 style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
                 }}

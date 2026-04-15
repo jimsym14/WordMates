@@ -398,7 +398,9 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
           email: user.email,
           photoURL: user.photoURL,
           preferences: DEFAULT_PREFERENCES,
-        }).catch((error) => {
+        })
+          .then(() => undefined)
+          .catch((error) => {
           console.error('Failed to auto-create missing profile', error);
           profileProvisioningRef.current.delete(user.uid);
         });
@@ -416,6 +418,51 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
       setProfileReady(false);
     };
   }, [db, user]);
+
+  useEffect(() => {
+    if (!user || user.isAnonymous || profileReady) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setProfile((current) => {
+        if (current) return current;
+
+        const fallbackUsername = deriveFallbackUsername(user);
+        const fallbackProfile: UserProfile = {
+          uid: user.uid,
+          username: fallbackUsername,
+          usernameLower: fallbackUsername.toLowerCase(),
+          authProvider: deriveAuthProvider(user),
+          email: user.email,
+          photoURL: user.photoURL,
+          preferences: DEFAULT_PREFERENCES,
+        };
+
+        if (db && !profileProvisioningRef.current.has(user.uid)) {
+          profileProvisioningRef.current.add(user.uid);
+          void upsertProfile(db, user.uid, {
+            username: fallbackUsername,
+            authProvider: fallbackProfile.authProvider,
+            email: user.email,
+            photoURL: user.photoURL,
+            preferences: DEFAULT_PREFERENCES,
+          })
+            .then(() => undefined)
+            .catch((error) => {
+            console.error('Failed to auto-create profile after sync timeout', error);
+            profileProvisioningRef.current.delete(user.uid);
+          });
+        }
+
+        return fallbackProfile;
+      });
+
+      setProfileReady(true);
+    }, 12000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [db, profileReady, user]);
 
   // Presence tracking with Firebase Realtime Database
   useEffect(() => {

@@ -330,9 +330,12 @@ html.dark.color-palomichi {
   }
 
   .neu-shell {
-    background: hsl(var(--panel-neutral));
-    border: 1px solid hsla(28, 32%, 65%, 0.25);
-    box-shadow: -18px -18px 38px rgba(255, 255, 255, 0.55), 26px 26px 54px rgba(203, 142, 97, 0.3);
+    background: linear-gradient(160deg, rgba(255, 255, 254, 0.97) 0%, rgba(255, 252, 248, 0.98) 100%);
+    border: 1px solid hsla(35, 28%, 78%, 0.62);
+    box-shadow:
+      0 34px 84px rgba(104, 136, 72, 0.14),
+      0 24px 62px rgba(227, 145, 76, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
     transition: all 0.5s ease-in-out;
   }
 
@@ -429,13 +432,14 @@ html.dark.color-palomichi {
   }
 
   .glass-panel-soft {
-    border: 1.2px solid rgba(255, 255, 255, 0.8);
+    border: 1.2px solid rgba(247, 238, 226, 0.95);
     box-shadow:
-      0 28px 70px rgba(15, 23, 42, 0.14),
-      inset 6px 6px 16px rgba(255, 255, 255, 0.88),
-      inset -6px -6px 14px rgba(148, 163, 184, 0.18);
+      0 22px 56px rgba(112, 136, 84, 0.12),
+      0 14px 36px rgba(236, 151, 77, 0.12),
+      inset 6px 6px 16px rgba(255, 255, 255, 0.9),
+      inset -6px -6px 14px rgba(160, 172, 180, 0.16);
     backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.92);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 251, 245, 0.95) 100%);
   }
 
   .sunset-card {
@@ -517,8 +521,11 @@ html.dark.color-palomichi {
 
   /* ── Neumorphic shells & cards ── */
   .color-palomichi .neu-shell {
-    border-color: hsla(338, 28%, 65%, 0.25);
-    box-shadow: -18px -18px 38px rgba(255, 255, 255, 0.55), 26px 26px 54px rgba(200, 120, 160, 0.3);
+    border-color: hsla(338, 24%, 78%, 0.55);
+    box-shadow:
+      0 34px 84px rgba(121, 143, 91, 0.12),
+      0 24px 62px rgba(214, 122, 73, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
   }
 
   .dark.color-palomichi .neu-shell {

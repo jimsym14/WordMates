@@ -280,7 +280,7 @@ export default function Home() {
 
   const modesList = (
     <div className="flex flex-col gap-4 sm:gap-5">
-      {(Object.entries(modeConfig) as [GameType, (typeof modeConfig)['solo']][])
+      {(Object.entries(modeConfig) as [PageMode, (typeof modeConfig)['solo']][])
         .filter(([type]) => type !== 'daily')
         .map(([type, config]) => {
           const Icon = config.icon;
@@ -386,11 +386,28 @@ export default function Home() {
       ref={containerRef}
       className={cn(
         "relative flex min-h-screen flex-col items-center justify-start animate-theme",
-        isMobile ? "h-screen overflow-hidden px-0 pt-0" : "px-4 pt-10 pb-12 sm:px-6 sm:pt-12 overflow-x-hidden animate-theme"
+        isMobile ? "h-screen overflow-hidden px-0 pt-0" : "px-4 pt-10 pb-12 sm:px-6 sm:pt-12 overflow-visible animate-theme"
       )}
     >
       <DailyNewspaperModal manualOpen={showDailyModal} onClose={() => setShowDailyModal(false)} />
       <div className="pointer-events-none absolute inset-0 -z-10">
+        {isLightMode && (
+          <div
+            className={cn(
+              'absolute inset-0',
+              isPalomichi
+                ? 'bg-[radial-gradient(130%_95%_at_18%_10%,rgba(248,224,234,0.82)_0%,rgba(255,250,253,0.96)_45%,rgba(246,248,236,0.95)_100%)]'
+                : 'bg-[radial-gradient(130%_95%_at_18%_10%,rgba(247,236,219,0.82)_0%,rgba(255,253,249,0.96)_45%,rgba(238,245,230,0.95)_100%)]'
+            )}
+          />
+        )}
+        {!isMobile && (
+          <GraffitiBackground
+            position="absolute"
+            zIndex={0}
+            className="opacity-95"
+          />
+        )}
         <div
           className="absolute left-1/2 top-24 h-[520px] w-[520px] -translate-x-1/2 rounded-full blur-[140px]"
           style={{ background: heroGlowBackground }}
@@ -414,7 +431,7 @@ export default function Home() {
 
       <motion.section
         ref={panelRef}
-        drag="y"
+        drag={isMobile ? 'y' : false}
         dragControls={dragControls}
         dragListener={isMobile ? (!isExpanded || isDragging) : false}
         dragConstraints={isMobile ? { top: 0, bottom: windowHeight * 0.65 } : false}
@@ -439,16 +456,16 @@ export default function Home() {
         onPointerUp={() => {
           if (isMobile) triggerHaptic('light'); // Immediate release feedback
         }}
-        style={isMobile ? { y: dragY, touchAction: isExpanded && !isDragging ? 'auto' : 'none' } : {}}
+        style={isMobile ? { y: dragY, touchAction: isExpanded && !isDragging ? 'auto' : 'none' } : { overflowY: 'visible' }}
         className={cn(
           'neu-shell relative z-20 w-full max-w-4xl rounded-t-[32px] !rounded-b-none backdrop-blur-xl sm:rounded-[36px] sm:!rounded-b-[36px] flex flex-col',
           isMobile 
             ? 'fixed top-0 left-0 right-0 h-screen shadow-[0_-15px_60px_rgba(0,0,0,0.6)] !transition-none' 
-            : 'relative mt-8 sm:mt-10 overflow-hidden p-5 sm:p-10',
+            : 'relative mt-8 sm:mt-10 overflow-visible overflow-y-visible h-auto p-5 sm:p-10',
           isLightMode
             ? isPalomichi
-              ? 'bg-[#FEEAF0] text-slate-900 transition-[background] duration-700 ease-out sm:bg-[#FEEAF0]'
-              : 'bg-[#FDE8D7] text-slate-900 transition-[background] duration-700 ease-out sm:bg-[#FDE8D7]'
+              ? 'bg-[#FFF9FC] text-slate-900 transition-[background] duration-700 ease-out sm:bg-[#FFF9FC]'
+              : 'bg-[#FFFCF8] text-slate-900 transition-[background] duration-700 ease-out sm:bg-[#FFFCF8]'
             : 'bg-[#121212] text-white sm:bg-transparent'
         )}
       >
@@ -488,7 +505,7 @@ export default function Home() {
                 className={cn(
                   'flex w-full items-center gap-3 rounded-[28px] px-4 py-3 text-sm transition-colors duration-300 sm:gap-5 backdrop-blur-3xl',
                   isLightMode
-                    ? 'bg-[#FFFBF7] shadow-[0_8px_20px_rgba(0,0,0,0.1)] text-slate-900'
+                    ? 'bg-[#FFFFFD] shadow-[0_16px_34px_rgba(108,133,78,0.12),0_10px_24px_rgba(231,141,72,0.14)] text-slate-900'
                     : 'border border-white/15 bg-black/40 text-white shadow-[inset_6px_6px_18px_rgba(0,0,0,0.5),inset_-4px_-4px_12px_rgba(255,255,255,0.05)]'
                 )}
               >
@@ -549,14 +566,15 @@ export default function Home() {
           </div>
         )}
 
-        <motion.div 
-          ref={internalScrollerRef}
+        <div
+          ref={isMobile ? internalScrollerRef : undefined}
           className={cn(
-            "w-full h-full flex flex-col",
-            isMobile ? "overflow-y-auto overscroll-contain px-5 pb-40" : ""
+            "w-full flex flex-col",
+            isMobile
+              ? "h-full overflow-y-auto overscroll-contain px-5 pb-40"
+              : "h-auto max-h-none overflow-visible overflow-y-visible"
           )}
-          onScroll={(e) => {
-            if (!isMobile) return;
+          onScroll={isMobile ? (e) => {
             const target = e.currentTarget;
             // More lenient threshold for top detection to capture drag earlier
             if (target.scrollTop <= 10) {
@@ -564,13 +582,76 @@ export default function Home() {
             } else {
               setIsDragging(false);
             }
-          }}
+          } : undefined}
         >
         <div className="pointer-events-none absolute inset-0 rounded-[36px] border border-white/5" />
         <div className="pointer-events-none absolute -right-16 top-8 h-64 w-64 rounded-full blur-[140px] opacity-70" style={{ background: activeDetails.gradient }} />
 
 
 
+
+        {!isMobile && (
+          <div className="relative z-40 mb-6">
+            <div className="relative z-10 w-full px-4 transform-gpu">
+              <div
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-[28px] px-4 py-3 text-sm transition-colors duration-300 sm:gap-5 backdrop-blur-3xl',
+                  isLightMode
+                    ? 'bg-[#FFFBF7] shadow-[0_8px_20px_rgba(0,0,0,0.1)] text-slate-900'
+                    : 'border border-white/15 bg-black/40 text-white shadow-[inset_6px_6px_18px_rgba(0,0,0,0.5),inset_-4px_-4px_12px_rgba(255,255,255,0.05)]'
+                )}
+              >
+                <div className="flex flex-1 items-center gap-3">
+                  <UserMenu
+                    variant="icon"
+                    className="h-11 w-11 shrink-0"
+                    onOpen={() => {
+                      if (!isExpanded) {
+                        const peekY = windowHeight * 0.65;
+                        animate(dragY, 0, { type: 'spring', damping: 40, stiffness: 450, restDelta: 0.1 });
+                        setIsExpanded(true);
+                        triggerHaptic('medium');
+                      }
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <p className={cn('text-[0.55rem] uppercase tracking-[0.4em]', isLightMode ? 'text-slate-600' : 'text-white/60')}>
+                      {statusLabel}
+                    </p>
+                    <p className={cn('truncate text-base font-semibold', isLightMode ? 'text-slate-900' : 'text-white')} title={displayName}>
+                      {displayName}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleFriendsClick}
+                    className={cn(
+                      'relative h-10 w-10 border bg-transparent',
+                      isLightMode ? 'border-slate/60 bg-white/60 text-slate-900' : 'border-white/25 text-white'
+                    )}
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    {(pendingRequestCount > 0 || unreadChatCount > 0) && (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.3rem] items-center justify-center rounded-full bg-destructive px-1 text-[0.65rem] font-semibold text-destructive-foreground animate-shake-periodic">
+                        {pendingRequestCount + unreadChatCount > 99 ? '99+' : pendingRequestCount + unreadChatCount}
+                      </span>
+                    )}
+                  </Button>
+                  <ThemeToggle
+                    className={cn(
+                      'h-10 w-10 rounded-full border',
+                      isLightMode ? 'border-slate/60 bg-white/60 text-slate-900' : 'border-white/25 text-white'
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="relative grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
           <div className="space-y-8">
@@ -580,7 +661,7 @@ export default function Home() {
             <div
               className={cn(
                 'lg:hidden rounded-[32px] p-4',
-                isLightMode ? 'bg-[#FFFBF7] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-900' : 'neu-card'
+                isLightMode ? 'bg-[#FFFFFD] shadow-[0_18px_40px_rgba(108,133,78,0.1),0_10px_24px_rgba(231,141,72,0.12)] text-slate-900' : 'neu-card'
               )}
             >
               <p className="text-center text-xs font-semibold uppercase tracking-[0.5em] text-muted-foreground">Modes</p>
@@ -602,7 +683,7 @@ export default function Home() {
                   key={stat.label}
                   className={cn(
                     'rounded-2xl p-4',
-                    isLightMode ? 'bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-900' : 'neu-card sunset-card'
+                    isLightMode ? 'bg-[#FFFFFD] shadow-[0_12px_30px_rgba(108,133,78,0.1),0_8px_18px_rgba(231,141,72,0.1)] text-slate-900' : 'neu-card sunset-card'
                   )}
                 >
                   <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{stat.label}</p>
@@ -627,7 +708,7 @@ export default function Home() {
                   key={finder.label}
                   className={cn(
                     'rounded-2xl p-4',
-                    isLightMode ? 'bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-900' : 'neu-card sunset-card'
+                    isLightMode ? 'bg-[#FFFFFD] shadow-[0_12px_30px_rgba(108,133,78,0.1),0_8px_18px_rgba(231,141,72,0.1)] text-slate-900' : 'neu-card sunset-card'
                   )}
                 >
                   <p className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
@@ -658,7 +739,7 @@ export default function Home() {
                   key={stat.label}
                   className={cn(
                     'rounded-2xl p-4',
-                    isLightMode ? 'bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-slate-900' : 'neu-card sunset-card'
+                    isLightMode ? 'bg-[#FFFFFD] shadow-[0_12px_30px_rgba(108,133,78,0.1),0_8px_18px_rgba(231,141,72,0.1)] text-slate-900' : 'neu-card sunset-card'
                   )}
                 >
                   <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{stat.label}</p>
@@ -683,7 +764,7 @@ export default function Home() {
           </div>
         </div>
         {isMobile && <div className="h-4 w-full shrink-0" />}
-      </motion.div>
+      </div>
     </motion.section>
 
       <SettingsModal

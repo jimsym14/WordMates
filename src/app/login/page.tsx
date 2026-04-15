@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type SVGProps } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -177,6 +177,7 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { auth, db, user, profile, signOut, sessionConflict, retrySessionClaim, isAuthReady, isProfileLoading } = useFirebase();
   const { playSound } = useSound();
   const { toast } = useToast();
@@ -248,6 +249,11 @@ export default function LoginPage() {
     signInForm.reset({ identifier: '', password: '' });
     signUpForm.reset({ username: '', email: '', password: '', confirmPassword: '' });
   }, [signInForm, signUpForm, user]);
+
+  useEffect(() => {
+    if (!searchParams || searchParams.get('syncTimeout') !== '1') return;
+    setAuthFeedback('We signed you in, but profile sync timed out. Please try Google login again.');
+  }, [searchParams]);
 
   const handleGuestEnter = async () => {
     if (!auth) return;
@@ -351,18 +357,17 @@ export default function LoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      if (isMobile) {
-        // Redirect is more reliable on mobile browsers where popups are often blocked
-        await signInWithRedirect(auth, provider);
-      } else {
-        const credential = await signInWithPopup(auth, provider);
-        await handleAuthSuccess(credential.user);
-      }
+      const credential = await signInWithPopup(auth, provider);
+      await handleAuthSuccess(credential.user);
     } catch (error) {
       console.error('Google auth failed', error);
       if (
         error instanceof FirebaseError &&
-        (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user')
+        (
+          error.code === 'auth/popup-blocked' ||
+          error.code === 'auth/popup-closed-by-user' ||
+          error.code === 'auth/operation-not-supported-in-this-environment'
+        )
       ) {
         try {
           await signInWithRedirect(auth, provider);

@@ -39,8 +39,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const sessionBlocked = sessionStatus === 'blocked';
 
   const shouldRedirectToLogin = Boolean(isAuthReady && !user && !onLoginRoute);
-  const profileMissing = Boolean(user && !profile && !onLoginRoute);
-  const waitingForProfile = Boolean(user && !onLoginRoute && (isProfileLoading || profileMissing));
+  const waitingForProfile = Boolean(user && !onLoginRoute && isProfileLoading);
   const [syncSeconds, setSyncSeconds] = useState(0);
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const syncResetFrameRef = useRef<number | null>(null);
@@ -94,13 +93,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (syncSeconds >= SYNC_TIMEOUT_SECONDS) {
       router.replace('/login?syncTimeout=1');
     }
-  }, [onLoginRoute, router, syncSeconds, waitingForProfile]);
+  }, [onLoginRoute, pathname, router, syncSeconds, user, waitingForProfile]);
 
   useEffect(() => {
     if (shouldRedirectToLogin && !onLoginRoute) {
       router.replace('/login');
     }
-  }, [onLoginRoute, router, shouldRedirectToLogin]);
+  }, [isAuthReady, onLoginRoute, pathname, router, shouldRedirectToLogin]);
 
   if (sessionBlocked && !onLoginRoute) {
     return <SessionConflictScreen onRetry={retrySessionClaim} />;
