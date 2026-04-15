@@ -25,8 +25,8 @@ import type { Database } from 'firebase/database';
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database';
 
 import { initializeFirebase } from '@/lib/firebase';
-import type { UserPreferences, UserProfile } from '@/types/user';
-import { updatePreferences as updateProfilePrefs } from '@/lib/profiles';
+import { DEFAULT_PREFERENCES, type AuthProviderType, type UserPreferences, type UserProfile } from '@/types/user';
+import { updatePreferences as updateProfilePrefs, upsertProfile } from '@/lib/profiles';
 import {
   clearGuestSession,
   GUEST_SESSION_EVENT,
@@ -45,6 +45,22 @@ import { setSocialAuthTokenProvider } from '@/lib/social-client';
 const firebaseSingleton = initializeFirebase();
 const SESSION_LOCKS_STORAGE_KEY = 'wordmates.sessionLocksSilencedAt';
 const SESSION_LOCKS_TOAST_SILENCE_MS = 12 * 60 * 60 * 1000;
+
+const deriveAuthProvider = (user: User): AuthProviderType => {
+  if (user.isAnonymous) return 'guest';
+  return user.providerData.some((provider) => provider.providerId === 'google.com') ? 'google' : 'password';
+};
+
+const deriveFallbackUsername = (user: User): string => {
+  const raw = user.displayName ?? user.email?.split('@')[0] ?? 'wordmate';
+  const normalized = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
+    .replace(/^[._-]+|[._-]+$/g, '');
+  const base = (normalized.length >= 3 ? normalized : 'wordmate').slice(0, 14);
+  const suffix = user.uid.slice(0, 6).toLowerCase();
+  return `${base}${suffix}`.slice(0, 20);
+};
 
 const generateSessionId = () => {
   const uuidFn = typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function'
@@ -101,6 +117,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const activeUidRef = useRef<string | null>(null);
   const [sessionAttempt, setSessionAttempt] = useState(0);
   const sessionDisableToastShownRef = useRef(false);
+  const profileProvisioningRef = useRef<Set<string>>(new Set());
 
   const { app, auth, db, rtdb } = firebaseSingleton;
 
@@ -349,8 +366,42 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onSnapshot(
       profileRef,
       (snapshot) => {
-        setProfile(snapshot.exists() ? (snapshot.data() as UserProfile) : null);
+        if (snapshot.exists()) {
+          setProfile(snapshot.data() as UserProfile);
+          setProfileReady(true);
+          profileProvisioningRef.current.delete(user.uid);
+          return;
+        }
+
+        const fallbackUsername = deriveFallbackUsername(user);
+        const provisionalProfile: UserProfile = {
+          uid: user.uid,
+          username: fallbackUsername,
+          usernameLower: fallbackUsername.toLowerCase(),
+          authProvider: deriveAuthProvider(user),
+          email: user.email,
+          photoURL: user.photoURL,
+          preferences: DEFAULT_PREFERENCES,
+        };
+
+        setProfile(provisionalProfile);
         setProfileReady(true);
+
+        if (profileProvisioningRef.current.has(user.uid)) {
+          return;
+        }
+
+        profileProvisioningRef.current.add(user.uid);
+        void upsertProfile(db, user.uid, {
+          username: fallbackUsername,
+          authProvider: provisionalProfile.authProvider,
+          email: user.email,
+          photoURL: user.photoURL,
+          preferences: DEFAULT_PREFERENCES,
+        }).catch((error) => {
+          console.error('Failed to auto-create missing profile', error);
+          profileProvisioningRef.current.delete(user.uid);
+        });
       },
       (error) => {
         console.error('Failed to watch profile', error);
